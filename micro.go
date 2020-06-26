@@ -171,8 +171,14 @@ func NewService(opts ...Option) *Service {
 		s.grpcServerOptions...,
 	)
 
+	// default http server
 	if s.HTTPServer == nil {
-		s.HTTPServer = &http.Server{}
+		s.HTTPServer = &http.Server{
+			ReadHeaderTimeout: 5 * time.Second,  //read header timeout
+			ReadTimeout:       5 * time.Second,  //read request timeout
+			WriteTimeout:      10 * time.Second, //write timeout
+			IdleTimeout:       20 * time.Second, //tcp idle time
+		}
 	}
 
 	return s
