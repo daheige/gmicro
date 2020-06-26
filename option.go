@@ -22,9 +22,16 @@ func WithRecovery(f func()) Option {
 }
 
 // WithHTTPHandler returns an Option to set the httpHandler
-func WithHTTPHandler(httpHandler http.Handler) Option {
+func WithHTTPHandler(h HTTPHandlerFunc) Option {
 	return func(s *Service) {
-		s.httpHandler = httpHandler
+		s.httpHandler = h
+	}
+}
+
+// WithErrorHandler returns an Option to set the errorHandler
+func WithErrorHandler(errorHandler runtime.ProtoErrorHandlerFunc) Option {
+	return func(s *Service) {
+		s.errorHandler = errorHandler
 	}
 }
 
@@ -43,7 +50,7 @@ func WithStreamInterceptor(streamInterceptor ...grpc.StreamServerInterceptor) Op
 }
 
 // WithShutdownFunc returns an Option to register a function which will be called when server shutdown
-func WithShutdownFunc(f func() error) Option {
+func WithShutdownFunc(f func()) Option {
 	return func(s *Service) {
 		s.shutdownFunc = f
 	}
@@ -56,10 +63,25 @@ func WithShutdownTimeout(timeout time.Duration) Option {
 	}
 }
 
+// WithPreShutdownDelay returns an Option to set the time waiting for running goroutines
+// to finish their jobs before the shutdown starts
+func WithPreShutdownDelay(timeout time.Duration) Option {
+	return func(s *Service) {
+		s.preShutdownDelay = timeout
+	}
+}
+
 // WithInterruptSignal returns an Option to append a interrupt signal
 func WithInterruptSignal(signal os.Signal) Option {
 	return func(s *Service) {
 		s.interruptSignals = append(s.interruptSignals, signal)
+	}
+}
+
+// WithStaticDir returns an Option to set the staticDir
+func WithStaticDir(dir string) Option {
+	return func(s *Service) {
+		s.staticDir = dir
 	}
 }
 
@@ -80,7 +102,7 @@ func WithGRPCDialOption(dialOption ...grpc.DialOption) Option {
 // WithGRPCMuxOption returns an Option to append a mux option
 func WithGRPCMuxOption(muxOption ...runtime.ServeMuxOption) Option {
 	return func(s *Service) {
-		s.gMuxOptions = append(s.gMuxOptions, muxOption...)
+		s.muxOptions = append(s.muxOptions, muxOption...)
 	}
 }
 
@@ -96,6 +118,13 @@ func WithHTTPServer(server *http.Server) Option {
 func WithLogger(logger Logger) Option {
 	return func(s *Service) {
 		s.logger = logger
+	}
+}
+
+// WithPrometheus enble prometheus config.
+func WithPrometheus(b bool) Option {
+	return func(s *Service) {
+		s.enablePrometheus = b
 	}
 }
 
