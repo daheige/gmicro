@@ -28,6 +28,13 @@ func WithHTTPHandler(h HTTPHandlerFunc) Option {
 	}
 }
 
+// WithAnnotator returns an Option to append some annotator
+func WithAnnotator(annotator ...AnnotatorFunc) Option {
+	return func(s *Service) {
+		s.annotators = append(s.annotators, annotator...)
+	}
+}
+
 // WithErrorHandler returns an Option to set the errorHandler
 func WithErrorHandler(errorHandler runtime.ProtoErrorHandlerFunc) Option {
 	return func(s *Service) {
