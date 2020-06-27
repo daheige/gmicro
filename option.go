@@ -135,6 +135,20 @@ func WithPrometheus(b bool) Option {
 	}
 }
 
+// WithReverseProxyFunc add handlerFromEndpoint to http gw endPoint
+func WithReverseProxyFunc(reverseProxyFunc ...ReverseProxyFunc) Option {
+	return func(s *Service) {
+		s.reverseProxyFuncs = append(s.reverseProxyFuncs, reverseProxyFunc...)
+	}
+}
+
+// WithRoutes adds additional routes.
+func (s *Service) WithRoutes(routes ...Route) Option {
+	return func(s *Service) {
+		s.routes = append(s.routes, routes...)
+	}
+}
+
 func (s *Service) apply(opts ...Option) {
 	for _, opt := range opts {
 		opt(s)

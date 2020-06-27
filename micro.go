@@ -39,10 +39,13 @@ var defaultMuxOption = runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtim
 // AnnotatorFunc is the annotator function is for injecting meta data from http request into gRPC context
 type AnnotatorFunc func(context.Context, *http.Request) metadata.MD
 
-// ReverseProxyFunc is the callback that the caller should implement to steps to reverse-proxy the HTTP/1 requests to gRPC
-type ReverseProxyFunc func(ctx context.Context, mux *runtime.ServeMux, grpcHostAndPort string, opts []grpc.DialOption) error
+// ReverseProxyFunc is the callback that the caller should implement
+// to steps to reverse-proxy the HTTP/1 requests to gRPC
+// handlerFromEndpoint http gw endPoint
+// automatically dials to "endpoint" and closes the connection when "ctx" gets done.
+type ReverseProxyFunc func(ctx context.Context, mux *runtime.ServeMux, grpcAddressAndPort string, opts []grpc.DialOption) error
 
-// HTTPHandlerFunc is the http middleware handler function
+// HTTPHandlerFunc is the http middleware handler function.
 type HTTPHandlerFunc func(*runtime.ServeMux) http.Handler
 
 // Service represents the microservice.
@@ -50,6 +53,8 @@ type Service struct {
 	GRPCServer         *grpc.Server    // grpc server
 	HTTPServer         *http.Server    // if you need grpc gw,please use it
 	httpHandler        HTTPHandlerFunc // http.Handler
+	grpcAddress        string          // grpc host eg: ip:port
+	httpServerAddress  string          // http server host eg: ip:port
 	recovery           func()
 	shutdownFunc       func() // shutdown func
 	shutdownTimeout    time.Duration
@@ -66,7 +71,8 @@ type Service struct {
 	grpcServerOptions  []grpc.ServerOption
 	grpcDialOptions    []grpc.DialOption
 	logger             Logger
-	enablePrometheus   bool // enable prometheus monitor
+	reverseProxyFuncs  []ReverseProxyFunc // http gw endpoint
+	enablePrometheus   bool               // enable prometheus monitor
 }
 
 // DefaultHTTPHandler is the default http handler which does nothing
@@ -114,21 +120,33 @@ func defaultService() *Service {
 	s.streamInterceptors = append(s.streamInterceptors, grpc_validator.StreamServerInterceptor())
 	s.unaryInterceptors = append(s.unaryInterceptors, grpc_validator.UnaryServerInterceptor())
 
-	// install prometheus interceptor
-	s.enablePrometheus = true
-	if s.enablePrometheus {
-		s.streamInterceptors = append(s.streamInterceptors, grpc_prometheus.StreamServerInterceptor)
-		s.unaryInterceptors = append(s.unaryInterceptors, grpc_prometheus.UnaryServerInterceptor)
-	}
-
 	// install panic handler which will turn panics into gRPC errors
 	s.streamInterceptors = append(s.streamInterceptors, grpc_recovery.StreamServerInterceptor())
 	s.unaryInterceptors = append(s.unaryInterceptors, grpc_recovery.UnaryServerInterceptor())
 
+	// default dial option is using insecure connection
+	if len(s.grpcDialOptions) == 0 {
+		s.grpcDialOptions = append(s.grpcDialOptions, grpc.WithInsecure())
+	}
+
 	// apply default marshaler option for mux, can be replaced by using MuxOption
 	s.muxOptions = append(s.muxOptions, defaultMuxOption)
 
+	return &s
+}
+
+// NewService creates a new microservice
+func NewService(opts ...Option) *Service {
+	s := defaultService()
+
+	// app option functions.
+	s.apply(opts...)
+
+	// install prometheus interceptor
 	if s.enablePrometheus {
+		s.streamInterceptors = append(s.streamInterceptors, grpc_prometheus.StreamServerInterceptor)
+		s.unaryInterceptors = append(s.unaryInterceptors, grpc_prometheus.UnaryServerInterceptor)
+
 		// add /metrics HTTP/1 endpoint
 		routeMetrics := Route{
 			Method:  "GET",
@@ -141,23 +159,10 @@ func defaultService() *Service {
 		s.routes = append(s.routes, routeMetrics)
 	}
 
-	return &s
-}
-
-// NewService creates a new microservice
-func NewService(opts ...Option) *Service {
-	s := defaultService()
-
-	s.apply(opts...)
-
-	// default dial option is using insecure connection
-	if len(s.grpcDialOptions) == 0 {
-		s.grpcDialOptions = append(s.grpcDialOptions, grpc.WithInsecure())
-	}
-
 	// init gateway mux
 	s.muxOptions = append(s.muxOptions, runtime.WithProtoErrorHandler(s.errorHandler))
 
+	// init annotators
 	for _, annotator := range s.annotators {
 		s.muxOptions = append(s.muxOptions, runtime.WithMetadata(annotator))
 	}
@@ -171,7 +176,8 @@ func NewService(opts ...Option) *Service {
 		s.grpcServerOptions...,
 	)
 
-	// default http server
+	// default http server config
+	// http server addr is specified in the startGRPCGateway method below
 	if s.HTTPServer == nil {
 		s.HTTPServer = &http.Server{
 			ReadHeaderTimeout: 5 * time.Second,  //read header timeout
@@ -189,13 +195,17 @@ func (s *Service) Getpid() int {
 	return os.Getpid()
 }
 
-// AddRoutes adds additional routes
-func (s *Service) AddRoutes(routes ...Route) {
-	s.routes = append(s.routes, routes...)
-}
-
 // Start starts the microservice with listening on the ports
-func (s *Service) Start(httpPort uint16, grpcPort uint16, reverseProxyFunc ReverseProxyFunc) error {
+// start grpc gateway and http server on different port
+func (s *Service) Start(httpPort int, grpcPort int, reverseProxyFunc ...ReverseProxyFunc) error {
+	// http gw host and grpc host
+	s.httpServerAddress = fmt.Sprintf("0.0.0.0:%d", httpPort)
+	s.grpcAddress = fmt.Sprintf("0.0.0.0:%d", grpcPort)
+
+	if len(reverseProxyFunc) > 0 {
+		s.reverseProxyFuncs = append(s.reverseProxyFuncs, reverseProxyFunc...)
+	}
+
 	// intercept interrupt signals
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, s.interruptSignals...)
@@ -207,13 +217,13 @@ func (s *Service) Start(httpPort uint16, grpcPort uint16, reverseProxyFunc Rever
 	// start gRPC server
 	go func() {
 		s.logger.Printf("Starting gPRC server listening on %d", grpcPort)
-		errChan1 <- s.startGRPCServer(grpcPort)
+		errChan1 <- s.startGRPCServer()
 	}()
 
 	// start HTTP/1.0 gateway server
 	go func() {
 		s.logger.Printf("Starting http server listening on %d", httpPort)
-		errChan2 <- s.startGRPCGateway(httpPort, grpcPort, reverseProxyFunc)
+		errChan2 <- s.startGRPCGateway()
 	}()
 
 	// wait for context cancellation or shutdown signal
@@ -235,12 +245,11 @@ func (s *Service) Start(httpPort uint16, grpcPort uint16, reverseProxyFunc Rever
 }
 
 // startGRPCServer start grpc server.
-func (s *Service) startGRPCServer(grpcPort uint16) error {
+func (s *Service) startGRPCServer() error {
 	// register reflection service on gRPC server.
 	// reflection.Register(s.GRPCServer)
 
-	grpcHost := fmt.Sprintf(":%d", grpcPort)
-	lis, err := net.Listen("tcp", grpcHost)
+	lis, err := net.Listen("tcp", s.grpcAddress)
 	if err != nil {
 		return err
 	}
@@ -248,15 +257,21 @@ func (s *Service) startGRPCServer(grpcPort uint16) error {
 	return s.GRPCServer.Serve(lis)
 }
 
-func (s *Service) startGRPCGateway(httpPort uint16, grpcPort uint16, reverseProxyFunc ReverseProxyFunc) error {
+func (s *Service) startGRPCGateway() error {
 	// apply routes
 	for _, route := range s.routes {
 		s.mux.Handle(route.Method, route.Pattern, route.Handler)
 	}
 
-	err := reverseProxyFunc(context.Background(), s.mux, fmt.Sprintf("localhost:%d", grpcPort), s.grpcDialOptions)
-	if err != nil {
-		return err
+	// Register http gw handlerFromEndpoint
+	ctx := context.Background()
+	var err error
+	for _, h := range s.reverseProxyFuncs {
+		err = h(ctx, s.mux, s.grpcAddress, s.grpcDialOptions)
+		if err != nil {
+			s.logger.Printf("register handler from endPoint error: %s", err.Error())
+			return err
+		}
 	}
 
 	// this is the fallback handler that will serve static files,
@@ -278,7 +293,7 @@ func (s *Service) startGRPCGateway(httpPort uint16, grpcPort uint16, reverseProx
 	})
 
 	// http server
-	s.HTTPServer.Addr = fmt.Sprintf(":%d", httpPort)
+	s.HTTPServer.Addr = s.httpServerAddress
 	s.HTTPServer.Handler = s.httpHandler(s.mux)
 	s.HTTPServer.RegisterOnShutdown(s.shutdownFunc)
 
@@ -306,5 +321,95 @@ func (s *Service) Stop() {
 	defer cancel()
 
 	// gracefully stop http server
-	s.HTTPServer.Shutdown(ctx)
+	go s.HTTPServer.Shutdown(ctx)
+	<-ctx.Done()
+}
+
+/**
+* The following method is mainly for grpc server and http gw server to start on one port
+ */
+
+// StartGRPCAndHTTPServer grpc server and grpc gateway port share a port
+func (s *Service) StartGRPCAndHTTPServer(port int) error {
+	// http gw host and grpc host
+	s.httpServerAddress = fmt.Sprintf("0.0.0.0:%d", port)
+	s.grpcAddress = s.httpServerAddress
+
+	// intercept interrupt signals
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, s.interruptSignals...)
+
+	// channels to receive error
+	errChan := make(chan error, 1)
+
+	// start HTTP/1.0 gateway server and  gRPC server.
+	go func() {
+		s.logger.Printf("Starting http server and grp server listening on %d", port)
+		errChan <- s.startWithSharePort()
+	}()
+
+	// wait for context cancellation or shutdown signal
+	select {
+	// if http server and gRPC server fail to start
+	case err := <-errChan:
+		return err
+	// if we received an interrupt signal
+	case sig := <-sigChan:
+		s.logger.Printf("Interrupt signal received: %v", sig)
+		s.stopGRPCAndHTTPServer()
+		return nil
+	}
+}
+
+func (s *Service) startWithSharePort() error {
+	// apply routes
+	for _, route := range s.routes {
+		s.mux.Handle(route.Method, route.Pattern, route.Handler)
+	}
+
+	ctx := context.Background()
+	var err error
+	for _, h := range s.reverseProxyFuncs {
+		err = h(ctx, s.mux, s.grpcAddress, s.grpcDialOptions)
+		if err != nil {
+			s.logger.Printf("register handler from endPoint error: %s", err.Error())
+		}
+	}
+
+	// http server and h2c handler
+	// create a http mux
+	httpMux := http.NewServeMux()
+	httpMux.Handle("/", s.mux)
+
+	s.HTTPServer.Addr = s.httpServerAddress
+	s.HTTPServer.Handler = GrpcHandlerFunc(s.GRPCServer, httpMux)
+	s.HTTPServer.RegisterOnShutdown(s.shutdownFunc)
+
+	return s.HTTPServer.ListenAndServe()
+}
+
+func (s *Service) stopGRPCAndHTTPServer() {
+	// disable keep-alives on existing connections
+	s.HTTPServer.SetKeepAlivesEnabled(false)
+
+	// we wait for a duration of preShutdownDelay for running goroutines to finish their jobs
+	if s.preShutdownDelay > 0 {
+		s.logger.Printf("Waiting for %v before shutdown starts", s.preShutdownDelay)
+		time.Sleep(s.preShutdownDelay)
+	}
+
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		s.shutdownTimeout,
+	)
+	defer cancel()
+
+	// gracefully stop http server
+	// Doesn't block if no connections, but will otherwise wait
+	// until the timeout deadline.
+	// Optionally, you could run srv.Shutdown in a goroutine and block on
+	// if your application should wait for other services
+	// to finalize based on context cancellation.
+	go s.HTTPServer.Shutdown(ctx)
+	<-ctx.Done()
 }
