@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -30,7 +31,7 @@ const (
 	defaultShutdownTimeout = 10 * time.Second
 
 	// the default time waiting for running goroutines to finish their jobs before the shutdown starts
-	defaultPreShutdownDelay = 1 * time.Second
+	defaultPreShutdownDelay = 2 * time.Second
 )
 
 // refer: https://github.com/grpc-ecosystem/grpc-gateway/blob/master/docs/_docs/customizingyourgateway.md
@@ -55,9 +56,9 @@ type Service struct {
 	httpHandler        HTTPHandlerFunc // http.Handler
 	grpcAddress        string          // grpc host eg: ip:port
 	httpServerAddress  string          // http server host eg: ip:port
-	recovery           func()
-	shutdownFunc       func() // shutdown func
-	shutdownTimeout    time.Duration
+	recovery           func()          // goroutine exec recover catch stack
+	shutdownFunc       func()          // shutdown func
+	shutdownTimeout    time.Duration   // shutdown wait time
 	preShutdownDelay   time.Duration
 	interruptSignals   []os.Signal // interrupt signal
 	annotators         []AnnotatorFunc
@@ -110,6 +111,16 @@ func defaultService() *Service {
 	s.shutdownTimeout = defaultShutdownTimeout
 	s.preShutdownDelay = defaultPreShutdownDelay
 	s.logger = dummyLogger
+
+	// goroutine recover catch stack
+	s.recovery = func() {
+		defer func() {
+			if e := recover(); e != nil {
+				s.logger.Printf("exec recover err: %v", e)
+				s.logger.Printf("full stack: %s", string(debug.Stack()))
+			}
+		}()
+	}
 
 	// default interrupt signals to catch, you can use InterruptSignal option to append more
 	s.interruptSignals = InterruptSignals
@@ -216,12 +227,16 @@ func (s *Service) Start(httpPort int, grpcPort int, reverseProxyFunc ...ReverseP
 
 	// start gRPC server
 	go func() {
+		defer s.recovery()
+
 		s.logger.Printf("Starting gPRC server listening on %d", grpcPort)
 		errChan1 <- s.startGRPCServer()
 	}()
 
 	// start HTTP/1.0 gateway server
 	go func() {
+		defer s.recovery()
+
 		s.logger.Printf("Starting http server listening on %d", httpPort)
 		errChan2 <- s.startGRPCGateway()
 	}()
@@ -325,9 +340,8 @@ func (s *Service) Stop() {
 	<-ctx.Done()
 }
 
-/**
-* The following method is mainly for grpc server and http gw server to start on one port
- */
+// ===The following method is mainly for grpc server and http gw server to start on one port==//
+// referr: https://github.com/daheige/go-proj/blob/master/cmd/rpc/http/server.go#L123
 
 // StartGRPCAndHTTPServer grpc server and grpc gateway port share a port
 func (s *Service) StartGRPCAndHTTPServer(port int) error {
@@ -344,6 +358,8 @@ func (s *Service) StartGRPCAndHTTPServer(port int) error {
 
 	// start HTTP/1.0 gateway server and  gRPC server.
 	go func() {
+		defer s.recovery()
+
 		s.logger.Printf("Starting http server and grp server listening on %d", port)
 		errChan <- s.startWithSharePort()
 	}()
