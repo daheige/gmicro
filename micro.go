@@ -135,11 +135,6 @@ func defaultService() *Service {
 	s.streamInterceptors = append(s.streamInterceptors, grpc_recovery.StreamServerInterceptor())
 	s.unaryInterceptors = append(s.unaryInterceptors, grpc_recovery.UnaryServerInterceptor())
 
-	// default dial option is using insecure connection
-	if len(s.grpcDialOptions) == 0 {
-		s.grpcDialOptions = append(s.grpcDialOptions, grpc.WithInsecure())
-	}
-
 	// apply default marshaler option for mux, can be replaced by using MuxOption
 	s.muxOptions = append(s.muxOptions, defaultMuxOption)
 
@@ -152,6 +147,11 @@ func NewService(opts ...Option) *Service {
 
 	// app option functions.
 	s.apply(opts...)
+
+	// default dial option is using insecure connection
+	if len(s.grpcDialOptions) == 0 {
+		s.grpcDialOptions = append(s.grpcDialOptions, grpc.WithInsecure())
+	}
 
 	// install prometheus interceptor
 	if s.enablePrometheus {
@@ -204,6 +204,11 @@ func NewService(opts ...Option) *Service {
 // Getpid gets the process id of server
 func (s *Service) Getpid() int {
 	return os.Getpid()
+}
+
+// AddRoutes add some route to routes
+func (s *Service) AddRoutes(routes ...Route) {
+	s.routes = append(s.routes, routes...)
 }
 
 // Start starts the microservice with listening on the ports
@@ -426,6 +431,5 @@ func (s *Service) stopGRPCAndHTTPServer() {
 	// Optionally, you could run srv.Shutdown in a goroutine and block on
 	// if your application should wait for other services
 	// to finalize based on context cancellation.
-	go s.HTTPServer.Shutdown(ctx)
-	<-ctx.Done()
+	s.HTTPServer.Shutdown(ctx)
 }

@@ -106,8 +106,8 @@ func WithGRPCDialOption(dialOption ...grpc.DialOption) Option {
 	}
 }
 
-// WithGRPCMuxOption returns an Option to append a mux option
-func WithGRPCMuxOption(muxOption ...runtime.ServeMuxOption) Option {
+// WithMuxOption returns an Option to append a mux option
+func WithMuxOption(muxOption ...runtime.ServeMuxOption) Option {
 	return func(s *Service) {
 		s.muxOptions = append(s.muxOptions, muxOption...)
 	}
@@ -142,8 +142,8 @@ func WithReverseProxyFunc(reverseProxyFunc ...ReverseProxyFunc) Option {
 	}
 }
 
-// WithRoutes adds additional routes.
-func (s *Service) WithRoutes(routes ...Route) Option {
+// WithRouteOpt adds additional routes
+func WithRouteOpt(routes ...Route) Option {
 	return func(s *Service) {
 		s.routes = append(s.routes, routes...)
 	}
