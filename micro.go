@@ -23,7 +23,9 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -51,29 +53,30 @@ type HTTPHandlerFunc func(*runtime.ServeMux) http.Handler
 
 // Service represents the microservice.
 type Service struct {
-	GRPCServer         *grpc.Server    // grpc server
-	HTTPServer         *http.Server    // if you need grpc gw,please use it
-	httpHandler        HTTPHandlerFunc // http.Handler
-	grpcAddress        string          // grpc host eg: ip:port
-	httpServerAddress  string          // http server host eg: ip:port
-	recovery           func()          // goroutine exec recover catch stack
-	shutdownFunc       func()          // shutdown func
-	shutdownTimeout    time.Duration   // shutdown wait time
-	preShutdownDelay   time.Duration
-	interruptSignals   []os.Signal // interrupt signal
-	annotators         []AnnotatorFunc
-	staticDir          string                         // static dir
-	errorHandler       runtime.ProtoErrorHandlerFunc  // grpc error handler
-	mux                *runtime.ServeMux              // grpc gw runtime serverMux
-	muxOptions         []runtime.ServeMuxOption       // grpc mux options
-	routes             []Route                        // grpc http router
-	streamInterceptors []grpc.StreamServerInterceptor // grpc steam interceptor
-	unaryInterceptors  []grpc.UnaryServerInterceptor  // grpc server interceptor
-	grpcServerOptions  []grpc.ServerOption
-	grpcDialOptions    []grpc.DialOption
-	logger             Logger
-	reverseProxyFuncs  []ReverseProxyFunc // http gw endpoint
-	enablePrometheus   bool               // enable prometheus monitor
+	GRPCServer          *grpc.Server    // grpc server
+	HTTPServer          *http.Server    // if you need grpc gw,please use it
+	httpHandler         HTTPHandlerFunc // http.Handler
+	grpcAddress         string          // grpc host eg: ip:port
+	httpServerAddress   string          // http server host eg: ip:port
+	recovery            func()          // goroutine exec recover catch stack
+	shutdownFunc        func()          // shutdown func
+	shutdownTimeout     time.Duration   // shutdown wait time
+	preShutdownDelay    time.Duration
+	interruptSignals    []os.Signal // interrupt signal
+	annotators          []AnnotatorFunc
+	staticDir           string                         // static dir
+	errorHandler        runtime.ProtoErrorHandlerFunc  // grpc error handler
+	mux                 *runtime.ServeMux              // grpc gw runtime serverMux
+	muxOptions          []runtime.ServeMuxOption       // grpc mux options
+	routes              []Route                        // grpc http router
+	streamInterceptors  []grpc.StreamServerInterceptor // grpc steam interceptor
+	unaryInterceptors   []grpc.UnaryServerInterceptor  // grpc server interceptor
+	enableRequestAccess bool                           // request log config
+	grpcServerOptions   []grpc.ServerOption
+	grpcDialOptions     []grpc.DialOption
+	logger              Logger             // logger entry
+	reverseProxyFuncs   []ReverseProxyFunc // http gw endpoint
+	enablePrometheus    bool               // enable prometheus monitor
 }
 
 // DefaultHTTPHandler is the default http handler which does nothing
@@ -116,8 +119,8 @@ func defaultService() *Service {
 	s.recovery = func() {
 		defer func() {
 			if e := recover(); e != nil {
-				s.logger.Printf("exec recover err: %v", e)
-				s.logger.Printf("full stack: %s", string(debug.Stack()))
+				s.logger.Printf("exec recover err: %v\n", e)
+				s.logger.Printf("full stack: %s\n", string(debug.Stack()))
 			}
 		}()
 	}
@@ -147,6 +150,11 @@ func NewService(opts ...Option) *Service {
 
 	// app option functions.
 	s.apply(opts...)
+
+	// install request interceptor
+	if s.enableRequestAccess {
+		s.unaryInterceptors = append(s.unaryInterceptors, s.RequestInterceptor)
+	}
 
 	// default dial option is using insecure connection
 	if len(s.grpcDialOptions) == 0 {
@@ -201,6 +209,51 @@ func NewService(opts ...Option) *Service {
 	return s
 }
 
+// RequestInterceptor request interceptor to record basic information of the request
+func (s *Service) RequestInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo,
+	handler grpc.UnaryHandler) (res interface{}, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			// the error format defined by grpc must be used here to return code, desc
+			err = status.Errorf(codes.Internal, "%s", "server inner error")
+
+			s.logger.Printf("reply: %v\n", res)
+			s.logger.Printf("exec panic: %v\n", r)
+			s.logger.Printf("full stack: %s\n", string(debug.Stack()))
+		}
+	}()
+
+	t := time.Now()
+	clientIP, _ := GetGRPCClientIP(ctx)
+
+	s.logger.Printf("exec begin\n")
+	s.logger.Printf("client_ip: %s\n", clientIP)
+	// s.logger.Printf("request: %v\n", req)
+
+	// request ctx key
+	if logID := ctx.Value(XRequestID); logID == nil {
+		ctx = context.WithValue(ctx, XRequestID, RndUUID())
+	}
+
+	ctx = context.WithValue(ctx, GRPCClientIP, clientIP)
+	ctx = context.WithValue(ctx, RequestMethod, info.FullMethod)
+	ctx = context.WithValue(ctx, RequestURI, info.FullMethod)
+
+	res, err = handler(ctx, req)
+	ttd := time.Now().Sub(t).Milliseconds()
+	if err != nil {
+		s.logger.Printf("trace_error: %s\n", err.Error())
+		s.logger.Printf("exec time: %v\n", ttd)
+		s.logger.Printf("reply: %v\n", res)
+
+		return nil, err
+	}
+
+	s.logger.Printf("exec end,cost time: %v ms\n", ttd)
+
+	return res, err
+}
+
 // Getpid gets the process id of server
 func (s *Service) Getpid() int {
 	return os.Getpid()
@@ -234,7 +287,7 @@ func (s *Service) Start(httpPort int, grpcPort int, reverseProxyFunc ...ReverseP
 	go func() {
 		defer s.recovery()
 
-		s.logger.Printf("Starting gPRC server listening on %d", grpcPort)
+		s.logger.Printf("Starting gPRC server listening on %d\n", grpcPort)
 		errChan1 <- s.startGRPCServer()
 	}()
 
@@ -242,7 +295,7 @@ func (s *Service) Start(httpPort int, grpcPort int, reverseProxyFunc ...ReverseP
 	go func() {
 		defer s.recovery()
 
-		s.logger.Printf("Starting http server listening on %d", httpPort)
+		s.logger.Printf("Starting http server listening on %d\n", httpPort)
 		errChan2 <- s.startGRPCGateway()
 	}()
 
@@ -258,7 +311,7 @@ func (s *Service) Start(httpPort int, grpcPort int, reverseProxyFunc ...ReverseP
 
 	// if we received an interrupt signal
 	case sig := <-sigChan:
-		s.logger.Printf("Interrupt signal received: %v", sig)
+		s.logger.Printf("Interrupt signal received: %v\n", sig)
 		s.Stop()
 		return nil
 	}
@@ -289,7 +342,7 @@ func (s *Service) startGRPCGateway() error {
 	for _, h := range s.reverseProxyFuncs {
 		err = h(ctx, s.mux, s.grpcAddress, s.grpcDialOptions)
 		if err != nil {
-			s.logger.Printf("register handler from endPoint error: %s", err.Error())
+			s.logger.Printf("register handler from endPoint error: %s\n", err.Error())
 			return err
 		}
 	}
@@ -327,7 +380,7 @@ func (s *Service) Stop() {
 
 	// we wait for a duration of preShutdownDelay for running goroutines to finish their jobs
 	if s.preShutdownDelay > 0 {
-		s.logger.Printf("Waiting for %v before shutdown starts", s.preShutdownDelay)
+		s.logger.Printf("Waiting for %v before shutdown starts\n", s.preShutdownDelay)
 		time.Sleep(s.preShutdownDelay)
 	}
 
@@ -365,7 +418,7 @@ func (s *Service) StartGRPCAndHTTPServer(port int) error {
 	go func() {
 		defer s.recovery()
 
-		s.logger.Printf("Starting http server and grp server listening on %d", port)
+		s.logger.Printf("Starting http server and grpc server listening on %d\n", port)
 		errChan <- s.startWithSharePort()
 	}()
 
@@ -376,7 +429,7 @@ func (s *Service) StartGRPCAndHTTPServer(port int) error {
 		return err
 	// if we received an interrupt signal
 	case sig := <-sigChan:
-		s.logger.Printf("Interrupt signal received: %v", sig)
+		s.logger.Printf("Interrupt signal received: %v\n", sig)
 		s.stopGRPCAndHTTPServer()
 		return nil
 	}
@@ -393,7 +446,7 @@ func (s *Service) startWithSharePort() error {
 	for _, h := range s.reverseProxyFuncs {
 		err = h(ctx, s.mux, s.grpcAddress, s.grpcDialOptions)
 		if err != nil {
-			s.logger.Printf("register handler from endPoint error: %s", err.Error())
+			s.logger.Printf("register handler from endPoint error: %s\n", err.Error())
 		}
 	}
 
@@ -415,7 +468,7 @@ func (s *Service) stopGRPCAndHTTPServer() {
 
 	// we wait for a duration of preShutdownDelay for running goroutines to finish their jobs
 	if s.preShutdownDelay > 0 {
-		s.logger.Printf("Waiting for %v before shutdown starts", s.preShutdownDelay)
+		s.logger.Printf("Waiting for %v before shutdown starts\n", s.preShutdownDelay)
 		time.Sleep(s.preShutdownDelay)
 	}
 

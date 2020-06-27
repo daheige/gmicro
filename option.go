@@ -128,6 +128,13 @@ func WithLogger(logger Logger) Option {
 	}
 }
 
+// WithRequestAccess request access log config.
+func WithRequestAccess(b bool) Option {
+	return func(s *Service) {
+		s.enableRequestAccess = b
+	}
+}
+
 // WithPrometheus enble prometheus config.
 func WithPrometheus(b bool) Option {
 	return func(s *Service) {

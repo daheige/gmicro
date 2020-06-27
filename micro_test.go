@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daheige/gmicro/internal/pb"
+	"github.com/daheige/gmicro/example/pb"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -22,7 +22,7 @@ var reverseProxyFunc ReverseProxyFunc
 var httpPort, grpcPort, sharePort int
 var shutdownFunc func()
 
-func init() {
+func initConf() {
 	reverseProxyFunc = func(
 		ctx context.Context,
 		mux *runtime.ServeMux,
@@ -41,7 +41,7 @@ func init() {
 	}
 }
 
-/**
+/** TestNewService
 % go test -v -test.run=TestNewService
 === RUN   TestNewService
 2020/06/27 18:56:52 Starting gPRC server listening on 9999
@@ -53,6 +53,7 @@ PASS
 ok  	github.com/daheige/gmicro	6.034s
 */
 func TestNewService(t *testing.T) {
+	initConf()
 	var should = require.New(t)
 
 	// add the /test endpoint
@@ -68,7 +69,7 @@ func TestNewService(t *testing.T) {
 	s := NewService(
 		WithRouteOpt(route),
 		WithShutdownFunc(shutdownFunc),
-		WithPreShutdownDelay(1),
+		WithPreShutdownDelay(1*time.Second),
 		WithReverseProxyFunc(pb.RegisterGreeterServiceHandlerFromEndpoint),
 		// WithReverseProxyFunc(ReverseProxyFunc(pb.RegisterGreeterServiceHandlerFromEndpoint)),
 		WithLogger(LoggerFunc(log.Printf)),
@@ -195,7 +196,7 @@ func TestNewService(t *testing.T) {
 	time.Sleep(3 * time.Second)
 }
 
-/**
+/** TestErrorReverseProxyFunc
 % go test -v -test.run=TestErrorReverseProxyFunc
 === RUN   TestErrorReverseProxyFunc
 --- PASS: TestErrorReverseProxyFunc (0.00s)
@@ -203,6 +204,8 @@ PASS
 ok  	github.com/daheige/gmicro	0.012s
 */
 func TestErrorReverseProxyFunc(t *testing.T) {
+	initConf()
+
 	var should = require.New(t)
 
 	// mock error from reverseProxyFunc
@@ -240,16 +243,32 @@ func (s *greeterService) SayHello(ctx context.Context, in *pb.HelloReq) (*pb.Hel
 	}, nil
 }
 
-/**
+/** TestGrpcAndHttpServer
 % go test -v -test.run=TestGrpcAndHttpServer
 === RUN   TestGrpcAndHttpServer
-2020/06/27 18:51:34 Starting http server and grp server listening on 8081
-2020/06/27 18:51:35 req data:  name:"daheige"
-2020/06/27 18:51:35 resp code:  200
-2020/06/27 18:51:40 req data:  name:"daheige"
+2020/06/27 22:48:58 Starting http server and grp server listening on 8081
+2020/06/27 22:48:59 exec begin
+2020/06/27 22:48:59 client_ip: 127.0.0.1
+2020/06/27 22:48:59 req data:  name:"daheige"
+2020/06/27 22:48:59 exec end,cost time: 0 ms
+2020/06/27 22:48:59 resp code:  200
+2020/06/27 22:49:02 exec begin
+2020/06/27 22:49:02 client_ip: 127.0.0.1
+2020/06/27 22:49:02 req data:  name:"daheige"
+2020/06/27 22:49:02 exec end,cost time: 0 ms
+2020/06/27 22:49:05 exec begin
+2020/06/27 22:49:05 client_ip: 127.0.0.1
+2020/06/27 22:49:05 req data:  name:"daheige123"
+2020/06/27 22:49:05 exec end,cost time: 0 ms
+2020/06/27 22:49:07 exec begin
+2020/06/27 22:49:07 client_ip: 127.0.0.1
+2020/06/27 22:49:07 req data:  name:"daheige123"
+2020/06/27 22:49:07 exec end,cost time: 0 ms
 */
 
 func TestGrpcAndHttpServer(t *testing.T) {
+	initConf()
+
 	var should = require.New(t)
 
 	// add the /test endpoint
@@ -265,9 +284,10 @@ func TestGrpcAndHttpServer(t *testing.T) {
 	s := NewService(
 		WithRouteOpt(route),
 		WithShutdownFunc(shutdownFunc),
-		WithPreShutdownDelay(2),
+		WithPreShutdownDelay(2*time.Second),
 		WithReverseProxyFunc(pb.RegisterGreeterServiceHandlerFromEndpoint),
 		WithLogger(LoggerFunc(log.Printf)),
+		WithRequestAccess(true),
 		WithPrometheus(true),
 		WithGRPCServerOption(grpc.ConnectionTimeout(10*time.Second)),
 	)
