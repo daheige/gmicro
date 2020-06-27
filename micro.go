@@ -431,5 +431,6 @@ func (s *Service) stopGRPCAndHTTPServer() {
 	// Optionally, you could run srv.Shutdown in a goroutine and block on
 	// if your application should wait for other services
 	// to finalize based on context cancellation.
-	s.HTTPServer.Shutdown(ctx)
+	go s.HTTPServer.Shutdown(ctx)
+	<-ctx.Done()
 }
