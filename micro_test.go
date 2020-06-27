@@ -70,6 +70,7 @@ func TestNewService(t *testing.T) {
 		WithShutdownFunc(shutdownFunc),
 		WithPreShutdownDelay(1),
 		WithReverseProxyFunc(pb.RegisterGreeterServiceHandlerFromEndpoint),
+		// WithReverseProxyFunc(ReverseProxyFunc(pb.RegisterGreeterServiceHandlerFromEndpoint)),
 		WithLogger(LoggerFunc(log.Printf)),
 		WithPrometheus(true),
 	)
