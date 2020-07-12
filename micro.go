@@ -559,7 +559,7 @@ func (s *Service) StartGRPCWithoutGateway(grpcPort int) error {
 	}
 }
 
-// StopGRPCServer stop the gRPC server gracefully
+// StopGRPCWithoutGateway stop the gRPC server gracefully
 func (s *Service) StopGRPCWithoutGateway() {
 	// we wait for a duration of preShutdownDelay for running goroutines to finish their jobs
 	if s.preShutdownDelay > 0 {
