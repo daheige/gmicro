@@ -65,13 +65,13 @@ type Service struct {
 	interruptSignals    []os.Signal // interrupt signal
 	annotators          []AnnotatorFunc
 	staticDir           string                         // static dir
-	errorHandler        runtime.ProtoErrorHandlerFunc  // grpc error handler
-	mux                 *runtime.ServeMux              // grpc gw runtime serverMux
-	muxOptions          []runtime.ServeMuxOption       // grpc mux options
-	routes              []Route                        // grpc http router
-	streamInterceptors  []grpc.StreamServerInterceptor // grpc steam interceptor
-	unaryInterceptors   []grpc.UnaryServerInterceptor  // grpc server interceptor
-	enableRequestAccess bool                           // request log config
+	errorHandler        runtime.ProtoErrorHandlerFunc  // gRPC error handler
+	mux                 *runtime.ServeMux              // gRPC gw runtime serverMux
+	muxOptions          []runtime.ServeMuxOption       // gRPC mux options
+	routes              []Route                        // gRPC http router
+	streamInterceptors  []grpc.StreamServerInterceptor // gRPC steam interceptor
+	unaryInterceptors   []grpc.UnaryServerInterceptor  // gRPC server interceptor
+	enableRequestAccess bool                           // gRPC request log config
 	gRPCServerOptions   []grpc.ServerOption
 	gRPCDialOptions     []grpc.DialOption
 	logger              Logger             // logger entry
@@ -486,4 +486,96 @@ func (s *Service) stopGRPCAndHTTPServer() {
 	// to finalize based on context cancellation.
 	go s.HTTPServer.Shutdown(ctx)
 	<-ctx.Done()
+}
+
+// The following method is only used to start the grpc server, but not start http gw.
+
+// NewServiceWithoutGateway new a service without http gw.
+func NewServiceWithoutGateway(opts ...Option) *Service {
+	s := defaultService()
+
+	// app option functions.
+	s.apply(opts...)
+
+	// install request interceptor
+	if s.enableRequestAccess {
+		s.unaryInterceptors = append(s.unaryInterceptors, s.RequestInterceptor)
+	}
+
+	// default dial option is using insecure connection
+	if len(s.gRPCDialOptions) == 0 {
+		s.gRPCDialOptions = append(s.gRPCDialOptions, grpc.WithInsecure())
+	}
+
+	// install prometheus interceptor
+	if s.enablePrometheus {
+		s.streamInterceptors = append(s.streamInterceptors, grpc_prometheus.StreamServerInterceptor)
+		s.unaryInterceptors = append(s.unaryInterceptors, grpc_prometheus.UnaryServerInterceptor)
+	}
+
+	s.muxOptions = nil
+
+	s.gRPCServerOptions = append(s.gRPCServerOptions, grpc_middleware.WithStreamServerChain(s.streamInterceptors...))
+	s.gRPCServerOptions = append(s.gRPCServerOptions, grpc_middleware.WithUnaryServerChain(s.unaryInterceptors...))
+
+	s.GRPCServer = grpc.NewServer(
+		s.gRPCServerOptions...,
+	)
+
+	return s
+}
+
+// StartGRPCWithoutGateway start gRPC without gw.
+func (s *Service) StartGRPCWithoutGateway(grpcPort int) error {
+	s.gRPCAddress = fmt.Sprintf("0.0.0.0:%d", grpcPort)
+
+	// intercept interrupt signals
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, s.interruptSignals...)
+
+	// channels to receive error
+	errChan := make(chan error, 1)
+
+	// start gRPC server
+	go func() {
+		defer s.recovery()
+
+		s.logger.Printf("Starting gPRC server listening on %d\n", grpcPort)
+		errChan <- s.startGRPCServer()
+	}()
+
+	// wait for context cancellation or shutdown signal
+	select {
+	// if gRPC server fail to start
+	case err := <-errChan:
+		return err
+	// if we received an interrupt signal
+	case sig := <-sigChan:
+		s.logger.Printf("Interrupt signal received: %v\n", sig)
+		s.StopGRPCWithoutGateway()
+		return nil
+	}
+}
+
+// StopGRPCServer stop the gRPC server gracefully
+func (s *Service) StopGRPCWithoutGateway() {
+	// we wait for a duration of preShutdownDelay for running goroutines to finish their jobs
+	if s.preShutdownDelay > 0 {
+		s.logger.Printf("Waiting for %v before shutdown starts\n", s.preShutdownDelay)
+		time.Sleep(s.preShutdownDelay)
+	}
+
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		s.shutdownTimeout,
+	)
+
+	defer cancel()
+
+	// gracefully stop gRPC server first
+	s.GRPCServer.GracefulStop()
+
+	<-ctx.Done()
+
+	s.logger.Printf("gRPC server shutdown success")
 }

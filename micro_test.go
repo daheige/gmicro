@@ -12,10 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daheige/gmicro/example/pb"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+
+	"github.com/daheige/gmicro/example/pb"
 )
 
 var reverseProxyFunc ReverseProxyFunc
@@ -190,7 +191,7 @@ func TestNewService(t *testing.T) {
 	should.Equal(http.StatusNotFound, resp.StatusCode)
 
 	// send an interrupt signal to stop s4
-	syscall.Kill(s4.Getpid(), syscall.SIGINT)
+	syscall.Kill(s4.GetPid(), syscall.SIGINT)
 
 	// wait 3 second for the server shutdown
 	time.Sleep(3 * time.Second)
@@ -243,30 +244,26 @@ func (s *greeterService) SayHello(ctx context.Context, in *pb.HelloReq) (*pb.Hel
 	}, nil
 }
 
-/** TestGrpcAndHttpServer
-% go test -v -test.run=TestGrpcAndHttpServer
-=== RUN   TestGrpcAndHttpServer
-2020/06/27 22:48:58 Starting http server and grp server listening on 8081
-2020/06/27 22:48:59 exec begin
-2020/06/27 22:48:59 client_ip: 127.0.0.1
-2020/06/27 22:48:59 req data:  name:"daheige"
-2020/06/27 22:48:59 exec end,cost time: 0 ms
-2020/06/27 22:48:59 resp code:  200
-2020/06/27 22:49:02 exec begin
-2020/06/27 22:49:02 client_ip: 127.0.0.1
-2020/06/27 22:49:02 req data:  name:"daheige"
-2020/06/27 22:49:02 exec end,cost time: 0 ms
-2020/06/27 22:49:05 exec begin
-2020/06/27 22:49:05 client_ip: 127.0.0.1
-2020/06/27 22:49:05 req data:  name:"daheige123"
-2020/06/27 22:49:05 exec end,cost time: 0 ms
-2020/06/27 22:49:07 exec begin
-2020/06/27 22:49:07 client_ip: 127.0.0.1
-2020/06/27 22:49:07 req data:  name:"daheige123"
-2020/06/27 22:49:07 exec end,cost time: 0 ms
+/** TestGRPCAndHttpServer
+% go test -v -test.run=TestGRPCAndHttpServer
+=== RUN   TestGRPCAndHttpServer
+2020/07/12 22:01:17 Starting http server and grpc server listening on 8081
+2020/07/12 22:01:18 exec begin
+2020/07/12 22:01:18 client_ip: 127.0.0.1
+2020/07/12 22:01:18 req data:  name:"daheige"
+2020/07/12 22:01:18 exec end,cost time: 0 ms
+2020/07/12 22:01:18 resp code:  200
+2020/07/12 22:02:07 exec begin
+2020/07/12 22:02:07 client_ip: 127.0.0.1
+2020/07/12 22:02:07 req data:  name:"daheige"
+2020/07/12 22:02:07 exec end,cost time: 0 ms
+2020/07/12 22:02:15 exec begin
+2020/07/12 22:02:15 client_ip: 127.0.0.1
+2020/07/12 22:02:15 req data:  name:"daheige123456"
+2020/07/12 22:02:15 exec end,cost time: 0 ms
 */
 
-func TestGrpcAndHttpServer(t *testing.T) {
+func TestGRPCAndHttpServer(t *testing.T) {
 	initConf()
 
 	var should = require.New(t)
@@ -361,4 +358,73 @@ func TestGrpcAndHttpServer(t *testing.T) {
 	should.NoError(err)
 	should.Equal(http.StatusOK, resp.StatusCode)
 	time.Sleep(100 * time.Second)
+}
+
+/**
+=== RUN   TestGRPCServerWithoutGateway
+2020/07/12 21:58:17 Starting gPRC server listening on 9999
+2020/07/12 21:58:18 exec begin
+2020/07/12 21:58:18 client_ip: 127.0.0.1
+2020/07/12 21:58:18 req data:  name:"daheige"
+2020/07/12 21:58:18 exec end,cost time: 0 ms
+2020/07/12 21:58:18 name:hello,daheige,message:call ok
+2020/07/12 21:58:19 Waiting for 2s before shutdown starts
+2020/07/12 21:58:31 gRPC server shutdown success
+--- PASS: TestGRPCServerWithoutGateway (14.02s)
+PASS
+*/
+func TestGRPCServerWithoutGateway(t *testing.T) {
+	initConf()
+
+	var should = require.New(t)
+
+	// test Option func
+	s := NewService(
+		WithShutdownFunc(shutdownFunc),
+		WithPreShutdownDelay(2*time.Second),
+		WithLogger(LoggerFunc(log.Printf)),
+		WithRequestAccess(true),
+		WithPrometheus(true),
+		WithGRPCServerOption(grpc.ConnectionTimeout(10*time.Second)),
+	)
+
+	// register grpc service
+	pb.RegisterGreeterServiceServer(s.GRPCServer, &greeterService{})
+
+	go func() {
+		err := s.StartGRPCWithoutGateway(grpcPort)
+		should.NoError(err)
+	}()
+
+	// wait 1 second for the server start
+	time.Sleep(1 * time.Second)
+
+	// check if the grpc server is up
+	grpcHost := fmt.Sprintf(":%d", grpcPort)
+	_, err := net.Listen("tcp", grpcHost)
+	should.Error(err)
+
+	// Set up a connection to the server.
+	conn, err := grpc.Dial(s.gRPCAddress, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+
+	defer conn.Close()
+
+	c := pb.NewGreeterServiceClient(conn)
+
+	// Contact the server and print out its response.
+	res, err := c.SayHello(context.Background(), &pb.HelloReq{
+		Name: "daheige",
+	})
+
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+
+	log.Printf("name:%s,message:%s", res.Name, res.Message)
+
+	time.Sleep(1 * time.Second)
+	s.StopGRPCWithoutGateway()
 }
