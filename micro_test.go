@@ -247,20 +247,28 @@ func (s *greeterService) SayHello(ctx context.Context, in *pb.HelloReq) (*pb.Hel
 /** TestGRPCAndHttpServer
 % go test -v -test.run=TestGRPCAndHttpServer
 === RUN   TestGRPCAndHttpServer
-2020/07/12 22:01:17 Starting http server and grpc server listening on 8081
-2020/07/12 22:01:18 exec begin
-2020/07/12 22:01:18 client_ip: 127.0.0.1
-2020/07/12 22:01:18 req data:  name:"daheige"
-2020/07/12 22:01:18 exec end,cost time: 0 ms
-2020/07/12 22:01:18 resp code:  200
-2020/07/12 22:02:07 exec begin
-2020/07/12 22:02:07 client_ip: 127.0.0.1
-2020/07/12 22:02:07 req data:  name:"daheige"
-2020/07/12 22:02:07 exec end,cost time: 0 ms
-2020/07/12 22:02:15 exec begin
-2020/07/12 22:02:15 client_ip: 127.0.0.1
-2020/07/12 22:02:15 req data:  name:"daheige123456"
-2020/07/12 22:02:15 exec end,cost time: 0 ms
+2020/07/12 22:26:54 Starting http server and grpc server listening on 8081
+2020/07/12 22:26:55 exec begin
+2020/07/12 22:26:55 client_ip: 127.0.0.1
+2020/07/12 22:26:55 req data:  name:"daheige"
+2020/07/12 22:26:55 exec end,cost time: 0 ms
+2020/07/12 22:26:55 resp code:  200
+2020/07/12 22:27:08 exec begin
+2020/07/12 22:27:08 client_ip: 127.0.0.1
+2020/07/12 22:27:08 req data:  name:"daheige123456"
+2020/07/12 22:27:08 exec end,cost time: 0 ms
+2020/07/12 22:27:15 exec begin
+2020/07/12 22:27:15 client_ip: 127.0.0.1
+2020/07/12 22:27:15 req data:  name:"daheige123456"
+2020/07/12 22:27:15 exec end,cost time: 0 ms
+2020/07/12 22:27:20 exec begin
+2020/07/12 22:27:20 client_ip: 127.0.0.1
+2020/07/12 22:27:20 req data:  name:"daheige123"
+2020/07/12 22:27:20 exec end,cost time: 0 ms
+2020/07/12 22:27:23 exec begin
+2020/07/12 22:27:23 client_ip: 127.0.0.1
+2020/07/12 22:27:23 req data:  name:"daheige"
+2020/07/12 22:27:23 exec end,cost time: 0 ms
 */
 
 func TestGRPCAndHttpServer(t *testing.T) {

@@ -419,7 +419,7 @@ func (s *Service) StartGRPCAndHTTPServer(port int) error {
 		defer s.recovery()
 
 		s.logger.Printf("Starting http server and grpc server listening on %d\n", port)
-		errChan <- s.startWithSharePort()
+		errChan <- s.startGRPCAndHTTPServer()
 	}()
 
 	// wait for context cancellation or shutdown signal
@@ -435,7 +435,7 @@ func (s *Service) StartGRPCAndHTTPServer(port int) error {
 	}
 }
 
-func (s *Service) startWithSharePort() error {
+func (s *Service) startGRPCAndHTTPServer() error {
 	// apply routes
 	for _, route := range s.routes {
 		s.mux.Handle(route.Method, route.Pattern, route.Handler)
@@ -456,6 +456,8 @@ func (s *Service) startWithSharePort() error {
 	httpMux.Handle("/", s.mux)
 
 	s.HTTPServer.Addr = s.httpServerAddress
+
+	// gRPC server handler convert to http handler.
 	s.HTTPServer.Handler = GRPCHandlerFunc(s.GRPCServer, httpMux)
 	s.HTTPServer.RegisterOnShutdown(s.shutdownFunc)
 
