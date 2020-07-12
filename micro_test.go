@@ -379,7 +379,7 @@ func TestGRPCServerWithoutGateway(t *testing.T) {
 	var should = require.New(t)
 
 	// test Option func
-	s := NewService(
+	s := NewServiceWithoutGateway(
 		WithShutdownFunc(shutdownFunc),
 		WithPreShutdownDelay(2*time.Second),
 		WithLogger(LoggerFunc(log.Printf)),
