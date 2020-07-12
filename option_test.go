@@ -42,7 +42,7 @@ func TestHTTPHandler(t *testing.T) {
 
 func TestUnaryInterceptor(t *testing.T) {
 	s := NewService(
-		WithUnaryInterceptor(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, 
+		WithUnaryInterceptor(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo,
 			handler grpc.UnaryHandler) (resp interface{}, err error) {
 			return nil, nil
 		}),
@@ -53,7 +53,7 @@ func TestUnaryInterceptor(t *testing.T) {
 
 func TestStreamInterceptor(t *testing.T) {
 	s := NewService(
-		WithStreamInterceptor(func(srv interface{}, stream grpc.ServerStream, 
+		WithStreamInterceptor(func(srv interface{}, stream grpc.ServerStream,
 			info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			return nil
 		}),
@@ -75,7 +75,7 @@ func TestGRPCServerOption(t *testing.T) {
 		WithGRPCServerOption(grpc.ConnectionTimeout(10 * time.Second)),
 	)
 
-	assert.Len(t, s.grpcServerOptions, 3)
+	assert.Len(t, s.gRPCServerOptions, 3)
 }
 
 func TestGRPCDialOption(t *testing.T) {
@@ -83,7 +83,7 @@ func TestGRPCDialOption(t *testing.T) {
 		WithGRPCDialOption(grpc.WithBlock()),
 	)
 
-	assert.Len(t, s.grpcDialOptions, 1)
+	assert.Len(t, s.gRPCDialOptions, 1)
 }
 
 func TestWithHTTPServer(t *testing.T) {
@@ -92,7 +92,7 @@ func TestWithHTTPServer(t *testing.T) {
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
 	}))
-	
+
 	assert.NotNil(t, s.HTTPServer)
 	assert.Equal(t, 5*time.Second, s.HTTPServer.ReadTimeout)
 }

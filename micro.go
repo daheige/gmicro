@@ -53,10 +53,10 @@ type HTTPHandlerFunc func(*runtime.ServeMux) http.Handler
 
 // Service represents the microservice.
 type Service struct {
-	GRPCServer          *grpc.Server    // grpc server
-	HTTPServer          *http.Server    // if you need grpc gw,please use it
+	GRPCServer          *grpc.Server    // gRPC server
+	HTTPServer          *http.Server    // if you need gRPC gw,please use it
 	httpHandler         HTTPHandlerFunc // http.Handler
-	grpcAddress         string          // grpc host eg: ip:port
+	gRPCAddress         string          // gRPC host eg: ip:port
 	httpServerAddress   string          // http server host eg: ip:port
 	recovery            func()          // goroutine exec recover catch stack
 	shutdownFunc        func()          // shutdown func
@@ -72,8 +72,8 @@ type Service struct {
 	streamInterceptors  []grpc.StreamServerInterceptor // grpc steam interceptor
 	unaryInterceptors   []grpc.UnaryServerInterceptor  // grpc server interceptor
 	enableRequestAccess bool                           // request log config
-	grpcServerOptions   []grpc.ServerOption
-	grpcDialOptions     []grpc.DialOption
+	gRPCServerOptions   []grpc.ServerOption
+	gRPCDialOptions     []grpc.DialOption
 	logger              Logger             // logger entry
 	reverseProxyFuncs   []ReverseProxyFunc // http gw endpoint
 	enablePrometheus    bool               // enable prometheus monitor
@@ -86,7 +86,7 @@ func DefaultHTTPHandler(mux *runtime.ServeMux) http.Handler {
 	})
 }
 
-// GrpcHandlerFunc uses the standard library h2c to convert http requests to http2
+// GRPCHandlerFunc uses the standard library h2c to convert http requests to http2
 // In this way, you can co-exist with go grpc and http services, and use one port
 // to provide both grpc services and http services.
 // In June 2018, the golang.org/x/net/http2/h2c standard library representing the "h2c"
@@ -96,7 +96,7 @@ func DefaultHTTPHandler(mux *runtime.ServeMux) http.Handler {
 // The h2c.NewHandler method has been specially processed, and h2c.NewHandler will return an http.handler
 // The main internal logic is to intercept all h2c traffic, then hijack and redirect it
 // to the corresponding Hander according to different request traffic types to process
-func GrpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
+func GRPCHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
 	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
 			grpcServer.ServeHTTP(w, r)
@@ -157,8 +157,8 @@ func NewService(opts ...Option) *Service {
 	}
 
 	// default dial option is using insecure connection
-	if len(s.grpcDialOptions) == 0 {
-		s.grpcDialOptions = append(s.grpcDialOptions, grpc.WithInsecure())
+	if len(s.gRPCDialOptions) == 0 {
+		s.gRPCDialOptions = append(s.gRPCDialOptions, grpc.WithInsecure())
 	}
 
 	// install prometheus interceptor
@@ -188,11 +188,11 @@ func NewService(opts ...Option) *Service {
 
 	s.mux = runtime.NewServeMux(s.muxOptions...)
 
-	s.grpcServerOptions = append(s.grpcServerOptions, grpc_middleware.WithStreamServerChain(s.streamInterceptors...))
-	s.grpcServerOptions = append(s.grpcServerOptions, grpc_middleware.WithUnaryServerChain(s.unaryInterceptors...))
+	s.gRPCServerOptions = append(s.gRPCServerOptions, grpc_middleware.WithStreamServerChain(s.streamInterceptors...))
+	s.gRPCServerOptions = append(s.gRPCServerOptions, grpc_middleware.WithUnaryServerChain(s.unaryInterceptors...))
 
 	s.GRPCServer = grpc.NewServer(
-		s.grpcServerOptions...,
+		s.gRPCServerOptions...,
 	)
 
 	// default http server config
@@ -254,8 +254,8 @@ func (s *Service) RequestInterceptor(ctx context.Context, req interface{}, info 
 	return res, err
 }
 
-// Getpid gets the process id of server
-func (s *Service) Getpid() int {
+// GetPid gets the process id of server
+func (s *Service) GetPid() int {
 	return os.Getpid()
 }
 
@@ -269,7 +269,7 @@ func (s *Service) AddRoutes(routes ...Route) {
 func (s *Service) Start(httpPort int, grpcPort int, reverseProxyFunc ...ReverseProxyFunc) error {
 	// http gw host and grpc host
 	s.httpServerAddress = fmt.Sprintf("0.0.0.0:%d", httpPort)
-	s.grpcAddress = fmt.Sprintf("0.0.0.0:%d", grpcPort)
+	s.gRPCAddress = fmt.Sprintf("0.0.0.0:%d", grpcPort)
 
 	if len(reverseProxyFunc) > 0 {
 		s.reverseProxyFuncs = append(s.reverseProxyFuncs, reverseProxyFunc...)
@@ -322,7 +322,7 @@ func (s *Service) startGRPCServer() error {
 	// register reflection service on gRPC server.
 	// reflection.Register(s.GRPCServer)
 
-	lis, err := net.Listen("tcp", s.grpcAddress)
+	lis, err := net.Listen("tcp", s.gRPCAddress)
 	if err != nil {
 		return err
 	}
@@ -340,7 +340,7 @@ func (s *Service) startGRPCGateway() error {
 	ctx := context.Background()
 	var err error
 	for _, h := range s.reverseProxyFuncs {
-		err = h(ctx, s.mux, s.grpcAddress, s.grpcDialOptions)
+		err = h(ctx, s.mux, s.gRPCAddress, s.gRPCDialOptions)
 		if err != nil {
 			s.logger.Printf("register handler from endPoint error: %s\n", err.Error())
 			return err
@@ -405,7 +405,7 @@ func (s *Service) Stop() {
 func (s *Service) StartGRPCAndHTTPServer(port int) error {
 	// http gw host and grpc host
 	s.httpServerAddress = fmt.Sprintf("0.0.0.0:%d", port)
-	s.grpcAddress = s.httpServerAddress
+	s.gRPCAddress = s.httpServerAddress
 
 	// intercept interrupt signals
 	sigChan := make(chan os.Signal, 1)
@@ -444,7 +444,7 @@ func (s *Service) startWithSharePort() error {
 	ctx := context.Background()
 	var err error
 	for _, h := range s.reverseProxyFuncs {
-		err = h(ctx, s.mux, s.grpcAddress, s.grpcDialOptions)
+		err = h(ctx, s.mux, s.gRPCAddress, s.gRPCDialOptions)
 		if err != nil {
 			s.logger.Printf("register handler from endPoint error: %s\n", err.Error())
 		}
@@ -456,7 +456,7 @@ func (s *Service) startWithSharePort() error {
 	httpMux.Handle("/", s.mux)
 
 	s.HTTPServer.Addr = s.httpServerAddress
-	s.HTTPServer.Handler = GrpcHandlerFunc(s.GRPCServer, httpMux)
+	s.HTTPServer.Handler = GRPCHandlerFunc(s.GRPCServer, httpMux)
 	s.HTTPServer.RegisterOnShutdown(s.shutdownFunc)
 
 	return s.HTTPServer.ListenAndServe()

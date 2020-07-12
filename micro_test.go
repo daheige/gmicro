@@ -223,7 +223,7 @@ func TestErrorReverseProxyFunc(t *testing.T) {
 
 	// http gw host and grpc host
 	s.httpServerAddress = fmt.Sprintf("0.0.0.0:%d", httpPort)
-	s.grpcAddress = fmt.Sprintf("0.0.0.0:%d", grpcPort)
+	s.gRPCAddress = fmt.Sprintf("0.0.0.0:%d", grpcPort)
 
 	err := s.startGRPCGateway()
 	should.EqualError(err, errText)

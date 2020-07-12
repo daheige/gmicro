@@ -95,14 +95,14 @@ func WithStaticDir(dir string) Option {
 // WithGRPCServerOption returns an Option to append a gRPC server option
 func WithGRPCServerOption(serverOption ...grpc.ServerOption) Option {
 	return func(s *Service) {
-		s.grpcServerOptions = append(s.grpcServerOptions, serverOption...)
+		s.gRPCServerOptions = append(s.gRPCServerOptions, serverOption...)
 	}
 }
 
 // WithGRPCDialOption returns an Option to append a gRPC dial option
 func WithGRPCDialOption(dialOption ...grpc.DialOption) Option {
 	return func(s *Service) {
-		s.grpcDialOptions = append(s.grpcDialOptions, dialOption...)
+		s.gRPCDialOptions = append(s.gRPCDialOptions, dialOption...)
 	}
 }
 
