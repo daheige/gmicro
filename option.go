@@ -142,10 +142,10 @@ func WithPrometheus(b bool) Option {
 	}
 }
 
-// WithReverseProxyFunc add handlerFromEndpoint to http gw endPoint
-func WithReverseProxyFunc(reverseProxyFunc ...ReverseProxyFunc) Option {
+// WithHandlerFromEndpoint add handlerFromEndpoint to http gw endPoint
+func WithHandlerFromEndpoint(reverseProxyFunc ...HandlerFromEndpoint) Option {
 	return func(s *Service) {
-		s.reverseProxyFuncs = append(s.reverseProxyFuncs, reverseProxyFunc...)
+		s.handlerFromEndpoints = append(s.handlerFromEndpoints, reverseProxyFunc...)
 	}
 }
 

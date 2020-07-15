@@ -19,7 +19,7 @@ import (
 	"github.com/daheige/gmicro/example/pb"
 )
 
-var reverseProxyFunc ReverseProxyFunc
+var reverseProxyFunc HandlerFromEndpoint
 var httpPort, grpcPort, sharePort int
 var shutdownFunc func()
 
@@ -71,8 +71,8 @@ func TestNewService(t *testing.T) {
 		WithRouteOpt(route),
 		WithShutdownFunc(shutdownFunc),
 		WithPreShutdownDelay(1*time.Second),
-		WithReverseProxyFunc(pb.RegisterGreeterServiceHandlerFromEndpoint),
-		// WithReverseProxyFunc(ReverseProxyFunc(pb.RegisterGreeterServiceHandlerFromEndpoint)),
+		WithHandlerFromEndpoint(pb.RegisterGreeterServiceHandlerFromEndpoint),
+		// WithHandlerFromEndpoint(HandlerFromEndpoint(pb.RegisterGreeterServiceHandlerFromEndpoint)),
 		WithLogger(LoggerFunc(log.Printf)),
 		WithPrometheus(true),
 	)
@@ -90,7 +90,7 @@ func TestNewService(t *testing.T) {
 		},
 	}
 
-	s.AddRoutes(newRoute)
+	s.AddRoute(newRoute)
 
 	newRoute2 := Route{
 		Method:  "GET",
@@ -102,10 +102,12 @@ func TestNewService(t *testing.T) {
 		},
 	}
 
-	s.AddRoutes(newRoute2)
+	s.AddRoute(newRoute2)
+
+	s.AddHandlerFromEndpoint(reverseProxyFunc)
 
 	go func() {
-		err := s.Start(httpPort, grpcPort, reverseProxyFunc)
+		err := s.Start(httpPort, grpcPort)
 		should.NoError(err)
 	}()
 
@@ -151,8 +153,10 @@ func TestNewService(t *testing.T) {
 	// create service s2 to trigger errChan1
 	s2 := NewService()
 
+	s2.AddHandlerFromEndpoint(reverseProxyFunc)
+
 	// grpc port 9999 alreday in use
-	err = s2.Start(httpPort, grpcPort, reverseProxyFunc)
+	err = s2.Start(httpPort, grpcPort)
 	should.Error(err)
 
 	// create service s3 to trigger errChan2
@@ -160,8 +164,9 @@ func TestNewService(t *testing.T) {
 
 	// http port 8888 already in use
 	s.GRPCServer.Stop()
+	s3.AddHandlerFromEndpoint(reverseProxyFunc)
 
-	err = s3.Start(httpPort, grpcPort, reverseProxyFunc)
+	err = s3.Start(httpPort, grpcPort)
 	should.Error(err)
 
 	// wait 1 second for s3 gRPC server start
@@ -177,8 +182,10 @@ func TestNewService(t *testing.T) {
 	s4 := NewService(
 		WithShutdownTimeout(10 * time.Second),
 	)
+	s4.AddHandlerFromEndpoint(reverseProxyFunc)
+
 	go func() {
-		err := s4.Start(httpPort, grpcPort, reverseProxyFunc)
+		err := s4.Start(httpPort, grpcPort)
 		should.NoError(err)
 	}()
 
@@ -220,7 +227,7 @@ func TestErrorReverseProxyFunc(t *testing.T) {
 		return errors.New(errText)
 	}
 
-	s := NewService(WithReverseProxyFunc(reverseProxyFunc))
+	s := NewService(WithHandlerFromEndpoint(reverseProxyFunc))
 
 	// http gw host and grpc host
 	s.httpServerAddress = fmt.Sprintf("0.0.0.0:%d", httpPort)
@@ -290,7 +297,7 @@ func TestGRPCAndHttpServer(t *testing.T) {
 		WithRouteOpt(route),
 		WithShutdownFunc(shutdownFunc),
 		WithPreShutdownDelay(2*time.Second),
-		WithReverseProxyFunc(pb.RegisterGreeterServiceHandlerFromEndpoint),
+		WithHandlerFromEndpoint(pb.RegisterGreeterServiceHandlerFromEndpoint),
 		WithLogger(LoggerFunc(log.Printf)),
 		WithRequestAccess(true),
 		WithPrometheus(true),
@@ -310,7 +317,7 @@ func TestGRPCAndHttpServer(t *testing.T) {
 		},
 	}
 
-	s.AddRoutes(newRoute)
+	s.AddRoute(newRoute)
 
 	newRoute2 := Route{
 		Method:  "GET",
@@ -322,7 +329,7 @@ func TestGRPCAndHttpServer(t *testing.T) {
 		},
 	}
 
-	s.AddRoutes(newRoute2)
+	s.AddRoute(newRoute2)
 
 	go func() {
 		err := s.StartGRPCAndHTTPServer(sharePort)

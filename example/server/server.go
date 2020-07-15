@@ -48,7 +48,7 @@ func main() {
 		gmicro.WithRouteOpt(route),
 		gmicro.WithShutdownFunc(shutdownFunc),
 		gmicro.WithPreShutdownDelay(2*time.Second),
-		gmicro.WithReverseProxyFunc(pb.RegisterGreeterServiceHandlerFromEndpoint),
+		gmicro.WithHandlerFromEndpoint(pb.RegisterGreeterServiceHandlerFromEndpoint),
 		gmicro.WithLogger(gmicro.LoggerFunc(log.Printf)),
 		gmicro.WithRequestAccess(true),
 		gmicro.WithPrometheus(true),
@@ -68,7 +68,7 @@ func main() {
 		},
 	}
 
-	s.AddRoutes(newRoute)
+	s.AddRoute(newRoute)
 
 	newRoute2 := gmicro.Route{
 		Method:  "GET",
@@ -80,7 +80,7 @@ func main() {
 		},
 	}
 
-	s.AddRoutes(newRoute2)
+	s.AddRoute(newRoute2)
 
 	log.Fatalln(s.StartGRPCAndHTTPServer(sharePort))
 }

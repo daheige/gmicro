@@ -13,7 +13,7 @@ import (
 
 const (
 	address = "localhost:8081"
-	// address     = "localhost:50050" //连接nginx grpc端口
+	// address     = "localhost:50050" // nginx grpc_pass port
 	defaultName = "golang grpc"
 )
 

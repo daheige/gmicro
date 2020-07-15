@@ -20,6 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
@@ -42,41 +43,41 @@ var defaultMuxOption = runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtim
 // AnnotatorFunc is the annotator function is for injecting meta data from http request into gRPC context
 type AnnotatorFunc func(context.Context, *http.Request) metadata.MD
 
-// ReverseProxyFunc is the callback that the caller should implement
+// HandlerFromEndpoint is the callback that the caller should implement
 // to steps to reverse-proxy the HTTP/1 requests to gRPC
 // handlerFromEndpoint http gw endPoint
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
-type ReverseProxyFunc func(ctx context.Context, mux *runtime.ServeMux, grpcAddressAndPort string, opts []grpc.DialOption) error
+type HandlerFromEndpoint func(ctx context.Context, mux *runtime.ServeMux, grpcAddressAndPort string, opts []grpc.DialOption) error
 
 // HTTPHandlerFunc is the http middleware handler function.
 type HTTPHandlerFunc func(*runtime.ServeMux) http.Handler
 
 // Service represents the microservice.
 type Service struct {
-	GRPCServer          *grpc.Server    // gRPC server
-	HTTPServer          *http.Server    // if you need gRPC gw,please use it
-	httpHandler         HTTPHandlerFunc // http.Handler
-	gRPCAddress         string          // gRPC host eg: ip:port
-	httpServerAddress   string          // http server host eg: ip:port
-	recovery            func()          // goroutine exec recover catch stack
-	shutdownFunc        func()          // shutdown func
-	shutdownTimeout     time.Duration   // shutdown wait time
-	preShutdownDelay    time.Duration
-	interruptSignals    []os.Signal // interrupt signal
-	annotators          []AnnotatorFunc
-	staticDir           string                         // static dir
-	errorHandler        runtime.ProtoErrorHandlerFunc  // gRPC error handler
-	mux                 *runtime.ServeMux              // gRPC gw runtime serverMux
-	muxOptions          []runtime.ServeMuxOption       // gRPC mux options
-	routes              []Route                        // gRPC http router
-	streamInterceptors  []grpc.StreamServerInterceptor // gRPC steam interceptor
-	unaryInterceptors   []grpc.UnaryServerInterceptor  // gRPC server interceptor
-	enableRequestAccess bool                           // gRPC request log config
-	gRPCServerOptions   []grpc.ServerOption
-	gRPCDialOptions     []grpc.DialOption
-	logger              Logger             // logger entry
-	reverseProxyFuncs   []ReverseProxyFunc // http gw endpoint
-	enablePrometheus    bool               // enable prometheus monitor
+	GRPCServer           *grpc.Server    // gRPC server
+	HTTPServer           *http.Server    // if you need gRPC gw,please use it
+	httpHandler          HTTPHandlerFunc // http.Handler
+	gRPCAddress          string          // gRPC host eg: ip:port
+	httpServerAddress    string          // http server host eg: ip:port
+	recovery             func()          // goroutine exec recover catch stack
+	shutdownFunc         func()          // shutdown func
+	shutdownTimeout      time.Duration   // shutdown wait time
+	preShutdownDelay     time.Duration
+	interruptSignals     []os.Signal // interrupt signal
+	annotators           []AnnotatorFunc
+	staticDir            string                         // static dir
+	errorHandler         runtime.ProtoErrorHandlerFunc  // gRPC error handler
+	mux                  *runtime.ServeMux              // gRPC gw runtime serverMux
+	muxOptions           []runtime.ServeMuxOption       // gRPC mux options
+	routes               []Route                        // gRPC http router
+	streamInterceptors   []grpc.StreamServerInterceptor // gRPC steam interceptor
+	unaryInterceptors    []grpc.UnaryServerInterceptor  // gRPC server interceptor
+	enableRequestAccess  bool                           // gRPC request log config
+	gRPCServerOptions    []grpc.ServerOption
+	gRPCDialOptions      []grpc.DialOption
+	logger               Logger                // logger interface entry
+	handlerFromEndpoints []HandlerFromEndpoint // http gw endpoint
+	enablePrometheus     bool                  // enable prometheus monitor
 }
 
 // DefaultHTTPHandler is the default http handler which does nothing
@@ -240,7 +241,7 @@ func (s *Service) RequestInterceptor(ctx context.Context, req interface{}, info 
 	ctx = context.WithValue(ctx, RequestURI, info.FullMethod)
 
 	res, err = handler(ctx, req)
-	ttd := time.Now().Sub(t).Milliseconds()
+	ttd := time.Since(t).Milliseconds()
 	if err != nil {
 		s.logger.Printf("trace_error: %s\n", err.Error())
 		s.logger.Printf("exec time: %v\n", ttd)
@@ -259,21 +260,22 @@ func (s *Service) GetPid() int {
 	return os.Getpid()
 }
 
-// AddRoutes add some route to routes
-func (s *Service) AddRoutes(routes ...Route) {
+// AddHandlerFromEndpoint add HandlerFromEndpoint.
+func (s *Service) AddHandlerFromEndpoint(h ...HandlerFromEndpoint) {
+	s.handlerFromEndpoints = append(s.handlerFromEndpoints, h...)
+}
+
+// AddRoute add some route to routes
+func (s *Service) AddRoute(routes ...Route) {
 	s.routes = append(s.routes, routes...)
 }
 
 // Start starts the microservice with listening on the ports
 // start grpc gateway and http server on different port
-func (s *Service) Start(httpPort int, grpcPort int, reverseProxyFunc ...ReverseProxyFunc) error {
+func (s *Service) Start(httpPort int, grpcPort int) error {
 	// http gw host and grpc host
 	s.httpServerAddress = fmt.Sprintf("0.0.0.0:%d", httpPort)
 	s.gRPCAddress = fmt.Sprintf("0.0.0.0:%d", grpcPort)
-
-	if len(reverseProxyFunc) > 0 {
-		s.reverseProxyFuncs = append(s.reverseProxyFuncs, reverseProxyFunc...)
-	}
 
 	// intercept interrupt signals
 	sigChan := make(chan os.Signal, 1)
@@ -320,7 +322,7 @@ func (s *Service) Start(httpPort int, grpcPort int, reverseProxyFunc ...ReverseP
 // startGRPCServer start grpc server.
 func (s *Service) startGRPCServer() error {
 	// register reflection service on gRPC server.
-	// reflection.Register(s.GRPCServer)
+	reflection.Register(s.GRPCServer)
 
 	lis, err := net.Listen("tcp", s.gRPCAddress)
 	if err != nil {
@@ -339,7 +341,7 @@ func (s *Service) startGRPCGateway() error {
 	// Register http gw handlerFromEndpoint
 	ctx := context.Background()
 	var err error
-	for _, h := range s.reverseProxyFuncs {
+	for _, h := range s.handlerFromEndpoints {
 		err = h(ctx, s.mux, s.gRPCAddress, s.gRPCDialOptions)
 		if err != nil {
 			s.logger.Printf("register handler from endPoint error: %s\n", err.Error())
@@ -402,6 +404,10 @@ func (s *Service) Stop() {
 // referr: https://github.com/daheige/go-proj/blob/master/cmd/rpc/http/server.go#L123
 
 // StartGRPCAndHTTPServer grpc server and grpc gateway port share a port
+// error: rpc error: code = Unavailable desc = all SubConns are in TransientFailure,
+// latest connection error: timed out waiting for server handshake
+// please set this gRPC var.
+// export GRPC_GO_REQUIRE_HANDSHAKE=off
 func (s *Service) StartGRPCAndHTTPServer(port int) error {
 	// http gw host and grpc host
 	s.httpServerAddress = fmt.Sprintf("0.0.0.0:%d", port)
@@ -443,7 +449,7 @@ func (s *Service) startGRPCAndHTTPServer() error {
 
 	ctx := context.Background()
 	var err error
-	for _, h := range s.reverseProxyFuncs {
+	for _, h := range s.handlerFromEndpoints {
 		err = h(ctx, s.mux, s.gRPCAddress, s.gRPCDialOptions)
 		if err != nil {
 			s.logger.Printf("register handler from endPoint error: %s\n", err.Error())
