@@ -1,5 +1,5 @@
 #!/bin/bash
-#ubuntu系统安装php7.2环境
+#ubuntu php7.2 install
 phpExec=`which php`
 if [ ! -z $phpExec ]; then
     echo "you has install php"
