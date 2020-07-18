@@ -51,6 +51,7 @@ mv $root_dir/clients/php/GPBMetadata $php_client_dir/App/Grpc/
 #sed -i 's/GPBMetadata/App\\\Grpc\\\GPBMetadata/g' `grep GPBMetadata -rl $php_client_dir/App/Grpc/`
 #sed -i 's/\\App\\Grpc\\GPBMetadata\\Google/\/\/ \\App\Grpc\\\GPBMetadata\\\Google/g' `grep GPBMetadata -rl $php_client_dir/App/Grpc/`
 
+# If you are using linux operating system, please replace with linux sed above
 # mac unix
 sed -i "" 's/GPBMetadata/App\\\Grpc\\\GPBMetadata/g' `grep GPBMetadata -rl $php_client_dir/App/Grpc/`
 

@@ -1,12 +1,11 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
-	"github.com/daheige/gmicro/example/pb"
-
-	"context"
+	"github.com/daheige/gmicro/example/clients/go/pb"
 
 	"google.golang.org/grpc"
 )

@@ -29,6 +29,11 @@ $protoExec -I $protos_dir --go_out=plugins=grpc:$root_dir/pb $protos_dir/*.proto
 #http gw code
 $protoExec -I $protos_dir --grpc-gateway_out=logtostderr=true:$root_dir/pb $protos_dir/*.proto
 
+# cp golang client code
+mkdir -p $root_dir/clients/go/pb
+
+cp -R $root_dir/pb/*.go $root_dir/clients/go/pb
+
 echo "generating golang code success"
 
 echo "\n\033[0;32mGenerate codes successfully!\033[39;49;0m\n"

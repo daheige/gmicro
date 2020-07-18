@@ -1,0 +1,10 @@
+{
+  "devDependencies": {
+    "grpc-tools": "^1.7.3"
+  },
+  "dependencies": {
+    "google-protobuf": "^3.8.0",
+    "grpc": "^1.24.3",
+    "node-pre-gyp": "^0.15.0"
+  }
+}

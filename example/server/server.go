@@ -83,6 +83,9 @@ func main() {
 	s.AddRoute(newRoute2)
 
 	log.Fatalln(s.StartGRPCAndHTTPServer(sharePort))
+
+	// You can also specify ports for grpc and http gw separately
+	// log.Fatalln(s.Start(sharePort,50051))
 }
 
 // rpc service entry

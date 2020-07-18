@@ -31,7 +31,7 @@ import (
 
 const (
 	// the default timeout before the server shutdown abruptly
-	defaultShutdownTimeout = 10 * time.Second
+	defaultShutdownTimeout = 8 * time.Second
 
 	// the default time waiting for running goroutines to finish their jobs before the shutdown starts
 	defaultPreShutdownDelay = 2 * time.Second

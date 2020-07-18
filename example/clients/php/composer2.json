@@ -1,5 +1,5 @@
 {
-    "name": "go-proj/php-grpc",
+    "name": "go-micro/php-grpc",
     "description": "gRPC example for PHP",
     "require": {
         "php": ">=5.5.0",
