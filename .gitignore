@@ -1,3 +1,4 @@
 *.log
 *.txt
 *.exe
+node_modules/*
