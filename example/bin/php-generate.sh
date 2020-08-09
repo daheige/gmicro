@@ -51,11 +51,15 @@ mv $root_dir/clients/php/GPBMetadata $php_client_dir/App/Grpc/
 #sed -i 's/GPBMetadata/App\\\Grpc\\\GPBMetadata/g' `grep GPBMetadata -rl $php_client_dir/App/Grpc/`
 #sed -i 's/\\App\\Grpc\\GPBMetadata\\Google/\/\/ \\App\Grpc\\\GPBMetadata\\\Google/g' `grep GPBMetadata -rl $php_client_dir/App/Grpc/`
 
-# If you are using linux operating system, please replace with linux sed above
-# mac unix
-sed -i "" 's/GPBMetadata/App\\\Grpc\\\GPBMetadata/g' `grep GPBMetadata -rl $php_client_dir/App/Grpc/`
-
-sed -i "" 's/\\App\\Grpc\\GPBMetadata\\Google/\/\/ \\App\Grpc\\\GPBMetadata\\\Google/g' `grep GPBMetadata -rl $php_client_dir/App/Grpc/`
+os=`uname -s`
+if [ $os == "Darwin" ];then
+    # mac os
+    sed -i "" 's/GPBMetadata/App\\\Grpc\\\GPBMetadata/g' `grep GPBMetadata -rl $php_client_dir/App/Grpc/`
+    sed -i "" 's/\\App\\Grpc\\GPBMetadata\\Google/\/\/ \\App\Grpc\\\GPBMetadata\\\Google/g' `grep GPBMetadata -rl $php_client_dir/App/Grpc/`
+else
+    sed -i 's/GPBMetadata/App\\\Grpc\\\GPBMetadata/g' `grep GPBMetadata -rl $php_client_dir/App/Grpc/`
+    sed -i 's/\\App\\Grpc\\GPBMetadata\\Google/\/\/ \\App\Grpc\\\GPBMetadata\\\Google/g' `grep GPBMetadata -rl $php_client_dir/App/Grpc/`
+fi
 
 echo "\n\033[0;32mGenerate codes successfully!\033[39;49;0m\n"
 

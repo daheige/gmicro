@@ -24,16 +24,17 @@ cd $root_dir/protos
 $protoExec --js_out=import_style=commonjs,binary:$nodejs_pb_dir --plugin=protoc-gen-grpc=$grpc_node_plugin --grpc_out=$nodejs_pb_dir *.proto
 
 # replace
-# linux os
-#sed -i 's/var google_api_annotations_pb/\/\/ var google_api_annotations_pb/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
-#sed -i 's/let google_api_annotations_pb/\/\/ let google_api_annotations_pb/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
-#sed -i 's/goog.object.extend(proto, google_api_annotations_pb)/\/\/ this code deleted/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
-
-# If you are using linux operating system, please replace with linux sed above
-# mac os
-sed -i "" 's/var google_api_annotations_pb/\/\/ var google_api_annotations_pb/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
-sed -i "" 's/let google_api_annotations_pb/\/\/ let google_api_annotations_pb/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
-sed -i "" 's/goog.object.extend(proto, google_api_annotations_pb)/\/\/ this code deleted/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
+os=`uname -s`
+if [ $os == "Darwin" ];then
+    # mac os
+    sed -i "" 's/var google_api_annotations_pb/\/\/ var google_api_annotations_pb/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
+    sed -i "" 's/let google_api_annotations_pb/\/\/ let google_api_annotations_pb/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
+    sed -i "" 's/goog.object.extend(proto, google_api_annotations_pb)/\/\/ this code deleted/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
+else
+    sed -i 's/var google_api_annotations_pb/\/\/ var google_api_annotations_pb/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
+    sed -i 's/let google_api_annotations_pb/\/\/ let google_api_annotations_pb/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
+    sed -i 's/goog.object.extend(proto, google_api_annotations_pb)/\/\/ this code deleted/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
+fi
 
 echo "generating nodejs code success"
 
