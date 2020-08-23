@@ -15,9 +15,9 @@
     it supports the same port, while providing http services (supporting http1.x protocol requests) 
     and the processing capabilities of grpc server.
 
-# grpc action
+# gmicro action
 
-    https://github.com/daheige/go-proj
+    https://github.com/daheige/goapp
     
 # Google APIs
 
