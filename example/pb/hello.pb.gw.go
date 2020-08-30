@@ -88,6 +88,7 @@ func local_request_GreeterService_SayHello_0(ctx context.Context, marshaler runt
 // RegisterGreeterServiceHandlerServer registers the http handlers for service GreeterService to "mux".
 // UnaryRPC     :call GreeterServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
+// Note that using this registration option will cause many gRPC library features (such as grpc.SendHeader, etc) to stop working. Consider using RegisterGreeterServiceHandlerFromEndpoint instead.
 func RegisterGreeterServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server GreeterServiceServer) error {
 
 	mux.Handle("GET", pattern_GreeterService_SayHello_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
