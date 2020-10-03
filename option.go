@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	gRuntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 )
 
@@ -13,6 +14,12 @@ import (
 // See this post about the "functional options" pattern:
 // http://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis
 type Option func(s *Service)
+
+func (s *Service) apply(opts []Option) {
+	for _, opt := range opts {
+		opt(s)
+	}
+}
 
 // WithRecovery service recover func.
 func WithRecovery(f func()) Option {
@@ -36,7 +43,7 @@ func WithAnnotator(annotator ...AnnotatorFunc) Option {
 }
 
 // WithErrorHandler returns an Option to set the errorHandler
-func WithErrorHandler(errorHandler runtime.ProtoErrorHandlerFunc) Option {
+func WithErrorHandler(errorHandler gRuntime.ProtoErrorHandlerFunc) Option {
 	return func(s *Service) {
 		s.errorHandler = errorHandler
 	}
@@ -156,8 +163,9 @@ func WithRouteOpt(routes ...Route) Option {
 	}
 }
 
-func (s *Service) apply(opts ...Option) {
-	for _, opt := range opts {
-		opt(s)
+// WithGRPCNetwork set gRPC start network type.
+func WithGRPCNetwork(network string) Option {
+	return func(s *Service) {
+		s.gRPCNetwork = network
 	}
 }

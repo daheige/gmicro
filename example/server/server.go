@@ -48,11 +48,13 @@ func main() {
 		gmicro.WithRouteOpt(route),
 		gmicro.WithShutdownFunc(shutdownFunc),
 		gmicro.WithPreShutdownDelay(2*time.Second),
+		gmicro.WithShutdownTimeout(6*time.Second),
 		gmicro.WithHandlerFromEndpoint(pb.RegisterGreeterServiceHandlerFromEndpoint),
 		gmicro.WithLogger(gmicro.LoggerFunc(log.Printf)),
 		gmicro.WithRequestAccess(true),
 		gmicro.WithPrometheus(true),
 		gmicro.WithGRPCServerOption(grpc.ConnectionTimeout(10*time.Second)),
+		gmicro.WithGRPCNetwork("tcp"), // grpc server start network
 	)
 
 	// register grpc service
@@ -82,10 +84,14 @@ func main() {
 
 	s.AddRoute(newRoute2)
 
+	// you can start grpc server and http gateway on one port
 	log.Fatalln(s.StartGRPCAndHTTPServer(sharePort))
 
-	// You can also specify ports for grpc and http gw separately
-	// log.Fatalln(s.Start(sharePort,50051))
+	// you can also specify ports for grpc and http gw separately
+	// log.Fatalln(s.Start(sharePort, 50051))
+
+	// you can start server without http gateway
+	// log.Fatalln(s.StartGRPCWithoutGateway(50051))
 }
 
 // rpc service entry
