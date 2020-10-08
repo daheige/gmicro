@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
-	"fmt"
+	"errors"
 	"math/rand"
 	"net"
 	"strconv"
@@ -14,15 +14,23 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
+var (
+	// ErrInvokeGRPCClientIP get grpc request client ip fail.
+	ErrInvokeGRPCClientIP = errors.New("invoke from context failed")
+
+	// ErrPeerAddressNil gRPC peer address is nil.
+	ErrPeerAddressNil = errors.New("peer address is nil")
+)
+
 // GetGRPCClientIP get client ip address from context
 func GetGRPCClientIP(ctx context.Context) (string, error) {
 	pr, ok := peer.FromContext(ctx)
 	if !ok {
-		return "", fmt.Errorf("[GetGRPCClientIp] invoke FromContext() failed")
+		return "", ErrInvokeGRPCClientIP
 	}
 
 	if pr.Addr == net.Addr(nil) {
-		return "", fmt.Errorf("[GetGRPCClientIp] peer.Addr is nil")
+		return "", ErrPeerAddressNil
 	}
 
 	addSlice := strings.Split(pr.Addr.String(), ":")
@@ -37,7 +45,9 @@ func GetGRPCClientIP(ctx context.Context) (string, error) {
 // Return format: eba1e8cd-0460-4910-49c6-44bdf3cf024d
 func RndUUID() string {
 	s := RndUUIDMd5()
-	return fmt.Sprintf("%s-%s-%s-%s-%s", s[:8], s[8:12], s[12:16], s[16:20], s[20:])
+	return strings.Join([]string{
+		s[:8], s[8:12], s[12:16], s[16:20], s[20:],
+	}, "-")
 }
 
 // RndUUIDMd5 make an uuid
