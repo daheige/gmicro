@@ -99,6 +99,13 @@ func WithStaticDir(dir string) Option {
 	}
 }
 
+// WithStaticAccess enable static file access
+func WithStaticAccess(b bool) Option {
+	return func(s *Service) {
+		s.enableStaticAccess = b
+	}
+}
+
 // WithGRPCServerOption returns an Option to append a gRPC server option
 func WithGRPCServerOption(serverOption ...grpc.ServerOption) Option {
 	return func(s *Service) {

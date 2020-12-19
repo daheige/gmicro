@@ -55,6 +55,7 @@ func main() {
 		gmicro.WithPrometheus(true),
 		gmicro.WithGRPCServerOption(grpc.ConnectionTimeout(10*time.Second)),
 		gmicro.WithGRPCNetwork("tcp"), // grpc server start network
+		gmicro.WithStaticAccess(true), // enable static file access,if use http gw
 	)
 
 	// register grpc service

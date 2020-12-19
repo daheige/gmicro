@@ -68,6 +68,7 @@ type Service struct {
 	interruptSignals     []os.Signal // interrupt signal
 	annotators           []AnnotatorFunc
 	staticDir            string                         // static dir
+	enableStaticAccess   bool                           // enable static file access
 	errorHandler         gRuntime.ProtoErrorHandlerFunc // gRPC error handler
 	mux                  *gRuntime.ServeMux             // gRPC gw runtime serverMux
 	muxOptions           []gRuntime.ServeMuxOption      // gRPC mux options
@@ -130,16 +131,18 @@ func defaultService() *Service {
 
 	// default interrupt signals to catch, you can use InterruptSignal option to append more
 	s.interruptSignals = InterruptSignals
-	s.streamInterceptors = []grpc.StreamServerInterceptor{}
-	s.unaryInterceptors = []grpc.UnaryServerInterceptor{}
 
-	// install validator interceptor
-	s.streamInterceptors = append(s.streamInterceptors, gValidator.StreamServerInterceptor())
-	s.unaryInterceptors = append(s.unaryInterceptors, gValidator.UnaryServerInterceptor())
+	// register interceptor
+	s.streamInterceptors = make([]grpc.StreamServerInterceptor, 0, 20)
+	s.unaryInterceptors = make([]grpc.UnaryServerInterceptor, 0, 20)
 
-	// install panic handler which will turn panics into gRPC errors
+	// install panic handler which will turn panics into gRPC errors.
 	s.streamInterceptors = append(s.streamInterceptors, gRecovery.StreamServerInterceptor())
 	s.unaryInterceptors = append(s.unaryInterceptors, gRecovery.UnaryServerInterceptor())
+
+	// install validator interceptor.
+	s.streamInterceptors = append(s.streamInterceptors, gValidator.StreamServerInterceptor())
+	s.unaryInterceptors = append(s.unaryInterceptors, gValidator.UnaryServerInterceptor())
 
 	// apply default marshaler option for mux, can be replaced by using MuxOption
 	s.muxOptions = append(s.muxOptions, defaultMuxOption)
@@ -357,24 +360,27 @@ func (s *Service) startGRPCGateway() error {
 		}
 	}
 
-	// this is the fallback handler that will serve static files,
-	// if file does not exist, then a 404 error will be returned.
-	s.mux.Handle("GET", AllPattern(), func(w http.ResponseWriter, r *http.Request,
-		pathParams map[string]string) {
-		dir := s.staticDir
-		if s.staticDir == "" {
-			dir, _ = os.Getwd()
-		}
+	// static file access
+	if s.enableStaticAccess {
+		// this is the fallback handler that will serve static files,
+		// if file does not exist, then a 404 error will be returned.
+		s.mux.Handle("GET", AllPattern(), func(w http.ResponseWriter, r *http.Request,
+			pathParams map[string]string) {
+			dir := s.staticDir
+			if s.staticDir == "" {
+				dir, _ = os.Getwd()
+			}
 
-		// check if the file exists and fobid showing directory
-		path := filepath.Join(dir, r.URL.Path)
-		if fileInfo, err := os.Stat(path); os.IsNotExist(err) || fileInfo.IsDir() {
-			http.NotFound(w, r)
-			return
-		}
+			// check if the file exists and fobid showing directory
+			path := filepath.Join(dir, r.URL.Path)
+			if fileInfo, err := os.Stat(path); os.IsNotExist(err) || fileInfo.IsDir() {
+				http.NotFound(w, r)
+				return
+			}
 
-		http.ServeFile(w, r, path)
-	})
+			http.ServeFile(w, r, path)
+		})
+	}
 
 	// http server
 	s.HTTPServer.Addr = s.httpServerAddress
@@ -384,7 +390,7 @@ func (s *Service) startGRPCGateway() error {
 	return s.HTTPServer.ListenAndServe()
 }
 
-// Stop stops the microservice gracefully
+// Stop stops the microservice gracefully.
 func (s *Service) Stop() {
 	// disable keep-alives on existing connections
 	s.HTTPServer.SetKeepAlivesEnabled(false)
