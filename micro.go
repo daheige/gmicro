@@ -36,9 +36,9 @@ const (
 	defaultPreShutdownDelay = 2 * time.Second
 )
 
-// refer: https://github.com/grpc-ecosystem/grpc-gateway/blob/master/docs/_docs/customizingyourgateway.md
+// refer: https://github.com/golang/protobuf/blob/v1.4.3/jsonpb/encode.go#L30
 var defaultMuxOption = gRuntime.WithMarshalerOption(gRuntime.MIMEWildcard,
-	&gRuntime.JSONPb{EmitDefaults: true})
+	&gRuntime.JSONPb{EmitDefaults: true, OrigName: false})
 
 // AnnotatorFunc is the annotator function is for injecting meta data from http request into gRPC context
 type AnnotatorFunc func(context.Context, *http.Request) metadata.MD

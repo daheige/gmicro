@@ -22,6 +22,10 @@ var (
 	ErrPeerAddressNil = errors.New("peer address is nil")
 )
 
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
 // GetGRPCClientIP get client ip address from context
 func GetGRPCClientIP(ctx context.Context) (string, error) {
 	pr, ok := peer.FromContext(ctx)
@@ -66,7 +70,6 @@ func RandInt64(min, max int64) int64 {
 		return max
 	}
 
-	rand.Seed(time.Now().UnixNano())
 	return rand.Int63n(max-min) + min
 }
 
