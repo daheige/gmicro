@@ -46,7 +46,7 @@ https://github.com/daheige/goapp
     
 # change log
 
-| options  | change log | time |
+| options  | desc | time |
 | :-----       | :---- |:----|
 | grpc gateway | upgrade grpc gateway to v2.4.0 | 2021-06-19 |
 | grpc         | upgrade go grpc to v1.38.0 | 2021-06-19 |
