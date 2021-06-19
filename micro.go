@@ -344,11 +344,6 @@ func (s *Service) startGRPCServer() error {
 }
 
 func (s *Service) startGRPCGateway() error {
-	// apply routes
-	for _, route := range s.routes {
-		s.mux.Handle(route.Method, route.Pattern, route.Handler)
-	}
-
 	// Register http gw handlerFromEndpoint
 	ctx := context.Background()
 	var err error
@@ -360,26 +355,14 @@ func (s *Service) startGRPCGateway() error {
 		}
 	}
 
+	// apply routes
+	s.applyRoutes()
+
 	// static file access
 	if s.enableStaticAccess {
 		// this is the fallback handler that will serve static files,
 		// if file does not exist, then a 404 error will be returned.
-		s.mux.Handle("GET", AllPattern(), func(w http.ResponseWriter, r *http.Request,
-			pathParams map[string]string) {
-			dir := s.staticDir
-			if s.staticDir == "" {
-				dir, _ = os.Getwd()
-			}
-
-			// check if the file exists and fobid showing directory
-			path := filepath.Join(dir, r.URL.Path)
-			if fileInfo, err := os.Stat(path); os.IsNotExist(err) || fileInfo.IsDir() {
-				http.NotFound(w, r)
-				return
-			}
-
-			http.ServeFile(w, r, path)
-		})
+		s.mux.Handle("GET", AllPattern(), s.ServeFile)
 	}
 
 	// http server
@@ -484,19 +467,18 @@ func (s *Service) StartGRPCAndHTTPServer(port int) error {
 }
 
 func (s *Service) startGRPCAndHTTPServer() error {
-	// apply routes
-	for _, route := range s.routes {
-		s.mux.Handle(route.Method, route.Pattern, route.Handler)
-	}
-
 	ctx := context.Background()
 	var err error
 	for _, h := range s.handlerFromEndpoints {
 		err = h(ctx, s.mux, s.gRPCAddress, s.gRPCDialOptions)
 		if err != nil {
 			s.logger.Printf("register handler from endPoint error: %s\n", err.Error())
+			return err
 		}
 	}
+
+	// apply routes
+	s.applyRoutes()
 
 	// http server and h2c handler
 	// create a http mux
@@ -504,7 +486,6 @@ func (s *Service) startGRPCAndHTTPServer() error {
 	httpMux.Handle("/", s.mux)
 
 	s.HTTPServer.Addr = s.httpServerAddress
-
 	// gRPC server handler convert to http handler.
 	s.HTTPServer.Handler = GRPCHandlerFunc(s.GRPCServer, httpMux)
 	s.HTTPServer.RegisterOnShutdown(s.shutdownFunc)
@@ -524,6 +505,12 @@ func (s *Service) stopGRPCAndHTTPServer() {
 
 	// graceful server shutdown
 	s.httpServerShutdown()
+}
+
+func (s *Service) applyRoutes() {
+	for _, route := range s.routes {
+		s.mux.Handle(route.Method, route.Pattern, route.Handler)
+	}
 }
 
 // The following method is only used to start the grpc server, but not start http gw.
@@ -627,4 +614,22 @@ func (s *Service) StopGRPCWithoutGateway() {
 	case <-done:
 		s.logger.Printf("Grpc server shutdown success")
 	}
+}
+
+// ServeFile serves a file
+// if file does not exist, then a 404 error will be returned.
+func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, _ map[string]string) {
+	dir := s.staticDir
+	if s.staticDir == "" {
+		dir, _ = os.Getwd()
+	}
+
+	// check if the file exists and fobid showing directory
+	path := filepath.Join(dir, r.URL.Path)
+	if fileInfo, err := os.Stat(path); os.IsNotExist(err) || fileInfo.IsDir() {
+		http.NotFound(w, r)
+		return
+	}
+
+	http.ServeFile(w, r, path)
 }

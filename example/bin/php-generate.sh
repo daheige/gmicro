@@ -53,7 +53,8 @@ mv $root_dir/clients/php/GPBMetadata $php_client_dir/App/Grpc/
 
 os=`uname -s`
 if [ $os == "Darwin" ];then
-    # mac os
+    # mac os LC_CTYPE config
+    export LC_CTYPE=C
     sed -i "" 's/GPBMetadata/App\\\Grpc\\\GPBMetadata/g' `grep GPBMetadata -rl $php_client_dir/App/Grpc/`
     sed -i "" 's/\\App\\Grpc\\GPBMetadata\\Google/\/\/ \\App\Grpc\\\GPBMetadata\\\Google/g' `grep GPBMetadata -rl $php_client_dir/App/Grpc/`
 else
