@@ -1,47 +1,75 @@
 # gmicro
   
     Golang grpc micro library.
-    Microservice prototype with gRPC + http +h2c+ logger + prometheus.
+    Microservice prototype with gRPC + http +h2c+ gRPC gateway + logger + prometheus.
     Require Go version >= v1.13.
     Reference project：https://github.com/dakalab/micro
 
 # supported features
 
     Golang grpc microservice scaffolding mainly encapsulates some components of grpc,
-    log tracking, link tracking, traffic h2c conversion, service monitoring prometheus and other functions, 
-    as far as possible to maintain the kiss principle, so that these components are pluggable of. 
+    log tracking, link tracking, traffic h2c conversion, service monitoring prometheus
+    and other functions,as far as possible to maintain the kiss principle, 
+    so that these components are pluggable of.
+
     The framework supports 2 different methods such as http api, grpc server pb. 
-    The protocol called by the client can be http or grpc pb format. At the same time, 
-    it supports the same port, while providing http services (supporting http1.x protocol requests) 
-    and the processing capabilities of grpc server.
+    The protocol called by the client can be http or grpc pb format. 
+    At the same time,it supports the same port, while providing 
+    http services (supporting http1.x protocol requests) and the processing 
+    capabilities of grpc server.
+
+# quick start
+    
+    please see example demo
+# grpc-go
+    
+https://github.com/grpc/grpc-go
+
+# grpc-gateway doc
+
+https://grpc-ecosystem.github.io/grpc-gateway/
+
+https://grpc-ecosystem.github.io/grpc-gateway/
 
 # gmicro action
 
-    see example or see https://github.com/daheige/goapp
+https://github.com/daheige/goapp
     
 # upgrade go grpc tools
-  
-    please perform the following operations in order
+
+
+| options  | change log | time |
+| :-----       | :---- |:----|
+| grpc gateway | upgrade grpc gateway to v2.4.0 | 2021-06-19 |
+| grpc         | upgrade go grpc to v1.38.0 | 2021-06-19 |
+| protobuf     | upgrade protobuf to v1.26.0 | 2021-06-19 |
+
+# grpc tools
+
+    please do the following:
     # go gRPC tools
-    go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
-    go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
-    go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
+    go get -v \
+    github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway \
+    github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2 \
+    google.golang.org/protobuf/cmd/protoc-gen-go \
+    google.golang.org/grpc/cmd/protoc-gen-go-grpc
     
     # go validator
     go get github.com/go-playground/validator/v10
     
-    # after successful execution, 3 binary files will be generated under the $GOBIN directory.
-    # protoc-gen-grpc-gateway
-    # protoc-gen-grpc-swagger
-    # protoc-gen-go
-    # google api link: github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis
+    #This will place four binaries in your $GOBIN;
+    #    protoc-gen-grpc-gateway
+    #    protoc-gen-openapiv2
+    #    protoc-gen-go
+    #    protoc-gen-go-grpc
     
     # protoc inject tag
-    # go get -u github.com/favadi/protoc-go-inject-tag  
+    # go get -u github.com/favadi/protoc-go-inject-tag
     
 # Google APIs
 
-    https://github.com/grpc-ecosystem/grpc-gateway/tree/master/third_party/googleapis
+    # googleapis link:https://github.com/googleapis/googleapis
+    api/rpc link: https://github.com/googleapis/googleapis/tree/master/google
 
     ============
     

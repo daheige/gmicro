@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/daheige/gmicro"
-	"github.com/daheige/gmicro/example/pb"
+	gmicro "github.com/daheige/gmicro/v2"
+	"github.com/daheige/gmicro/v2/example/pb"
 	"google.golang.org/grpc"
 )
 
@@ -36,8 +36,8 @@ func init() {
 func main() {
 	// add the /test endpoint
 	route := gmicro.Route{
-		Method:  "GET",
-		Pattern: gmicro.PathPattern("test"),
+		Method: "GET",
+		Path:   "/test",
 		Handler: func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 			w.Write([]byte("Hello!"))
 		},
@@ -62,8 +62,8 @@ func main() {
 	pb.RegisterGreeterServiceServer(s.GRPCServer, &greeterService{})
 
 	newRoute := gmicro.Route{
-		Method:  "GET",
-		Pattern: gmicro.PathPattern("health"),
+		Method: "GET",
+		Path:   "health",
 		Handler: func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusOK)
@@ -74,8 +74,8 @@ func main() {
 	s.AddRoute(newRoute)
 
 	newRoute2 := gmicro.Route{
-		Method:  "GET",
-		Pattern: gmicro.PathPattern("info"),
+		Method: "GET",
+		Path:   "/info",
 		Handler: func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusOK)
@@ -96,7 +96,18 @@ func main() {
 }
 
 // rpc service entry
-type greeterService struct{}
+type greeterService struct {
+	// 这里必须包含这个解构体才可以，否则就是没有实现
+	/*
+		// All implementations must embed UnimplementedGreeterServiceServer
+		// for forward compatibility
+		type GreeterServiceServer interface {
+			SayHello(context.Context, *HelloReq) (*HelloReply, error)
+			mustEmbedUnimplementedGreeterServiceServer()
+		}
+	*/
+	pb.UnimplementedGreeterServiceServer
+}
 
 func (s *greeterService) SayHello(ctx context.Context, in *pb.HelloReq) (*pb.HelloReply, error) {
 	// panic(111)

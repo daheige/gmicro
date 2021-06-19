@@ -17,7 +17,7 @@ import (
 	gRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	gValidator "github.com/grpc-ecosystem/go-grpc-middleware/validator"
 	gPrometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	gRuntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
+	gRuntime "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -37,8 +37,7 @@ const (
 )
 
 // refer: https://github.com/golang/protobuf/blob/v1.4.3/jsonpb/encode.go#L30
-var defaultMuxOption = gRuntime.WithMarshalerOption(gRuntime.MIMEWildcard,
-	&gRuntime.JSONPb{EmitDefaults: true, OrigName: false})
+var defaultMuxOption = gRuntime.WithMarshalerOption(gRuntime.MIMEWildcard, &gRuntime.JSONPb{})
 
 // AnnotatorFunc is the annotator function is for injecting meta data from http request into gRPC context
 type AnnotatorFunc func(context.Context, *http.Request) metadata.MD
@@ -69,10 +68,10 @@ type Service struct {
 	annotators           []AnnotatorFunc
 	staticDir            string                         // static dir
 	enableStaticAccess   bool                           // enable static file access
-	errorHandler         gRuntime.ProtoErrorHandlerFunc // gRPC error handler
+	errorHandler         gRuntime.ErrorHandlerFunc      // gRPC error handler
 	mux                  *gRuntime.ServeMux             // gRPC gw runtime serverMux
 	muxOptions           []gRuntime.ServeMuxOption      // gRPC mux options
-	routes               []Route                        // gRPC http router
+	routes               []Route                        // gRPC http custom router rules
 	streamInterceptors   []grpc.StreamServerInterceptor // gRPC steam interceptor
 	unaryInterceptors    []grpc.UnaryServerInterceptor  // gRPC server interceptor
 	enableRequestAccess  bool                           // gRPC request log config
@@ -113,7 +112,7 @@ func GRPCHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Ha
 func defaultService() *Service {
 	s := Service{}
 	s.httpHandler = DefaultHTTPHandler
-	s.errorHandler = gRuntime.DefaultHTTPError
+	s.errorHandler = gRuntime.DefaultHTTPErrorHandler
 	s.shutdownFunc = func() {}
 	s.shutdownTimeout = defaultShutdownTimeout
 	s.preShutdownDelay = defaultPreShutdownDelay
@@ -174,8 +173,8 @@ func NewService(opts ...Option) *Service {
 
 		// add /metrics HTTP/1 endpoint
 		routeMetrics := Route{
-			Method:  "GET",
-			Pattern: PathPattern("metrics"),
+			Method: "GET",
+			Path:   "/metrics",
 			Handler: func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 				promhttp.Handler().ServeHTTP(w, r)
 			},
@@ -185,7 +184,7 @@ func NewService(opts ...Option) *Service {
 	}
 
 	// init gateway mux
-	s.muxOptions = append(s.muxOptions, gRuntime.WithProtoErrorHandler(s.errorHandler))
+	s.muxOptions = append(s.muxOptions, gRuntime.WithErrorHandler(s.errorHandler))
 
 	// init annotators
 	for _, annotator := range s.annotators {
@@ -344,11 +343,6 @@ func (s *Service) startGRPCServer() error {
 }
 
 func (s *Service) startGRPCGateway() error {
-	// apply routes
-	for _, route := range s.routes {
-		s.mux.Handle(route.Method, route.Pattern, route.Handler)
-	}
-
 	// Register http gw handlerFromEndpoint
 	ctx := context.Background()
 	var err error
@@ -364,22 +358,13 @@ func (s *Service) startGRPCGateway() error {
 	if s.enableStaticAccess {
 		// this is the fallback handler that will serve static files,
 		// if file does not exist, then a 404 error will be returned.
-		s.mux.Handle("GET", AllPattern(), func(w http.ResponseWriter, r *http.Request,
-			pathParams map[string]string) {
-			dir := s.staticDir
-			if s.staticDir == "" {
-				dir, _ = os.Getwd()
-			}
+		s.mux.Handle("GET", AllPattern(), s.ServeFile)
+	}
 
-			// check if the file exists and fobid showing directory
-			path := filepath.Join(dir, r.URL.Path)
-			if fileInfo, err := os.Stat(path); os.IsNotExist(err) || fileInfo.IsDir() {
-				http.NotFound(w, r)
-				return
-			}
-
-			http.ServeFile(w, r, path)
-		})
+	// apply routes
+	err = s.appRoutes()
+	if err != nil {
+		return err
 	}
 
 	// http server
@@ -388,6 +373,23 @@ func (s *Service) startGRPCGateway() error {
 	s.HTTPServer.RegisterOnShutdown(s.shutdownFunc)
 
 	return s.HTTPServer.ListenAndServe()
+}
+
+func (s *Service) appRoutes() error {
+	for _, route := range s.routes {
+		if !strings.HasPrefix(route.Path, "/") {
+			route.Path = "/" + route.Path
+		}
+
+		err := s.mux.HandlePath(route.Method, route.Path, route.Handler)
+		if err != nil {
+			s.logger.Printf("add router error:%s,current method:%s path:%s invalid", err.Error(),
+				route.Method, route.Path)
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Stop stops the microservice gracefully.
@@ -484,18 +486,20 @@ func (s *Service) StartGRPCAndHTTPServer(port int) error {
 }
 
 func (s *Service) startGRPCAndHTTPServer() error {
-	// apply routes
-	for _, route := range s.routes {
-		s.mux.Handle(route.Method, route.Pattern, route.Handler)
-	}
-
 	ctx := context.Background()
 	var err error
 	for _, h := range s.handlerFromEndpoints {
 		err = h(ctx, s.mux, s.gRPCAddress, s.gRPCDialOptions)
 		if err != nil {
 			s.logger.Printf("register handler from endPoint error: %s\n", err.Error())
+			return err
 		}
+	}
+
+	// apply routes
+	err = s.appRoutes()
+	if err != nil {
+		return err
 	}
 
 	// http server and h2c handler
@@ -504,7 +508,6 @@ func (s *Service) startGRPCAndHTTPServer() error {
 	httpMux.Handle("/", s.mux)
 
 	s.HTTPServer.Addr = s.httpServerAddress
-
 	// gRPC server handler convert to http handler.
 	s.HTTPServer.Handler = GRPCHandlerFunc(s.GRPCServer, httpMux)
 	s.HTTPServer.RegisterOnShutdown(s.shutdownFunc)
@@ -627,4 +630,21 @@ func (s *Service) StopGRPCWithoutGateway() {
 	case <-done:
 		s.logger.Printf("Grpc server shutdown success")
 	}
+}
+
+// ServeFile serves a file
+func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+	dir := s.staticDir
+	if s.staticDir == "" {
+		dir, _ = os.Getwd()
+	}
+
+	// check if the file exists and fobid showing directory
+	path := filepath.Join(dir, r.URL.Path)
+	if fileInfo, err := os.Stat(path); os.IsNotExist(err) || fileInfo.IsDir() {
+		http.NotFound(w, r)
+		return
+	}
+
+	http.ServeFile(w, r, path)
 }

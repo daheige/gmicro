@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	gRuntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	gRuntime "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 )
 
@@ -43,7 +43,7 @@ func WithAnnotator(annotator ...AnnotatorFunc) Option {
 }
 
 // WithErrorHandler returns an Option to set the errorHandler
-func WithErrorHandler(errorHandler gRuntime.ProtoErrorHandlerFunc) Option {
+func WithErrorHandler(errorHandler gRuntime.ErrorHandlerFunc) Option {
 	return func(s *Service) {
 		s.errorHandler = errorHandler
 	}

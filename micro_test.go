@@ -12,16 +12,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/daheige/gmicro/v2/example/pb"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-
-	"github.com/daheige/gmicro/example/pb"
 )
 
-var reverseProxyFunc HandlerFromEndpoint
-var httpPort, grpcPort, sharePort int
-var shutdownFunc func()
+var (
+	reverseProxyFunc              HandlerFromEndpoint
+	httpPort, grpcPort, sharePort int
+	shutdownFunc                  func()
+)
 
 func initConf() {
 	reverseProxyFunc = func(
@@ -45,13 +46,12 @@ func initConf() {
 /** TestNewService
 % go test -v -test.run=TestNewService
 === RUN   TestNewService
-2020/06/27 18:56:52 Starting gPRC server listening on 9999
-2020/06/27 18:56:52 Starting http server listening on 8888
-2020/06/27 18:56:53 req data:  name:"daheige"
-2020/06/27 18:56:53 resp code:  200
---- PASS: TestNewService (6.02s)
+2021/06/19 21:29:33 Starting gPRC server listening on 9999
+2021/06/19 21:29:33 Starting http server listening on 8888
+2021/06/19 21:29:34 req data:  name:"daheige"
+2021/06/19 21:29:34 resp code:  200
+--- PASS: TestNewService (6.03s)
 PASS
-ok  	github.com/daheige/gmicro	6.034s
 */
 func TestNewService(t *testing.T) {
 	initConf()
@@ -59,8 +59,8 @@ func TestNewService(t *testing.T) {
 
 	// add the /test endpoint
 	route := Route{
-		Method:  "GET",
-		Pattern: PathPattern("test"),
+		Method: "GET",
+		Path:   "/test",
 		Handler: func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 			w.Write([]byte("Hello!"))
 		},
@@ -80,9 +80,9 @@ func TestNewService(t *testing.T) {
 	// register grpc service
 	pb.RegisterGreeterServiceServer(s.GRPCServer, &greeterService{})
 
-	newRoute := Route{
-		Method:  "GET",
-		Pattern: PathPattern("health"),
+	healthRoute := Route{
+		Method: "GET",
+		Path:   "/health",
 		Handler: func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusOK)
@@ -90,11 +90,11 @@ func TestNewService(t *testing.T) {
 		},
 	}
 
-	s.AddRoute(newRoute)
+	s.AddRoute(healthRoute)
 
 	newRoute2 := Route{
-		Method:  "GET",
-		Pattern: PathPattern("info"),
+		Method: "GET",
+		Path:   "/info",
 		Handler: func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusOK)
@@ -103,6 +103,21 @@ func TestNewService(t *testing.T) {
 	}
 
 	s.AddRoute(newRoute2)
+
+	// add test.json
+	fileRoute := Route{
+		Method:  "GET",
+		Path:    "/test.json",
+		Handler: s.ServeFile,
+	}
+	s.AddRoute(fileRoute)
+
+	noRoute := Route{
+		Method:  "GET",
+		Path:    "/404",
+		Handler: s.ServeFile,
+	}
+	s.AddRoute(noRoute)
 
 	s.AddHandlerFromEndpoint(reverseProxyFunc)
 
@@ -209,7 +224,7 @@ func TestNewService(t *testing.T) {
 === RUN   TestErrorReverseProxyFunc
 --- PASS: TestErrorReverseProxyFunc (0.00s)
 PASS
-ok  	github.com/daheige/gmicro	0.012s
+ok  	github.com/daheige/gmicro/v2	0.012s
 */
 func TestErrorReverseProxyFunc(t *testing.T) {
 	initConf()
@@ -238,7 +253,9 @@ func TestErrorReverseProxyFunc(t *testing.T) {
 }
 
 // rpc service entry
-type greeterService struct{}
+type greeterService struct {
+	pb.UnimplementedGreeterServiceServer
+}
 
 func (s *greeterService) SayHello(ctx context.Context, in *pb.HelloReq) (*pb.HelloReply, error) {
 	// panic(111)
@@ -285,8 +302,8 @@ func TestGRPCAndHttpServer(t *testing.T) {
 
 	// add the /test endpoint
 	route := Route{
-		Method:  "GET",
-		Pattern: PathPattern("test"),
+		Method: "GET",
+		Path:   "/test",
 		Handler: func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 			w.Write([]byte("Hello!"))
 		},
@@ -308,8 +325,8 @@ func TestGRPCAndHttpServer(t *testing.T) {
 	pb.RegisterGreeterServiceServer(s.GRPCServer, &greeterService{})
 
 	newRoute := Route{
-		Method:  "GET",
-		Pattern: PathPattern("health"),
+		Method: "GET",
+		Path:   "/health",
 		Handler: func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusOK)
@@ -320,8 +337,8 @@ func TestGRPCAndHttpServer(t *testing.T) {
 	s.AddRoute(newRoute)
 
 	newRoute2 := Route{
-		Method:  "GET",
-		Pattern: PathPattern("info"),
+		Method: "GET",
+		Path:   "/info",
 		Handler: func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusOK)
