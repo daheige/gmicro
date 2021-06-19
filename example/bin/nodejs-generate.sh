@@ -26,6 +26,9 @@ $protoExec --js_out=import_style=commonjs,binary:$nodejs_pb_dir --plugin=protoc-
 # replace
 os=`uname -s`
 if [ $os == "Darwin" ];then
+     # mac os LC_CTYPE config
+    export LC_CTYPE=C
+
     # mac os
     sed -i "" 's/var google_api_annotations_pb/\/\/ var google_api_annotations_pb/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
     sed -i "" 's/let google_api_annotations_pb/\/\/ let google_api_annotations_pb/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`

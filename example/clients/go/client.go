@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/daheige/gmicro/example/clients/go/pb"
+	"github.com/daheige/gmicro/v2/example/clients/go/pb"
 
 	"google.golang.org/grpc"
 )
