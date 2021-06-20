@@ -22,12 +22,22 @@ echo "\n\033[0;32mGenerating codes...\033[39;49;0m\n"
 echo "generating golang stubs..."
 cd $protos_dir
 
-# echo $protoExec -I $protos_dir --go_out=plugins=grpc:$root_dir/pb $protos_dir/*.proto;
-
-$protoExec -I $protos_dir --go_out=plugins=grpc:$root_dir/pb $protos_dir/*.proto
+#if you can't use it, please use this method
+#$protoExec -I $protos_dir --go_out=plugins=grpc:$root_dir/pb $protos_dir/*.proto
 
 #http gw code
-$protoExec -I $protos_dir --grpc-gateway_out=logtostderr=true:$root_dir/pb $protos_dir/*.proto
+#$protoExec -I $protos_dir --grpc-gateway_out=logtostderr=true:$root_dir/pb $protos_dir/*.proto
+
+$protoExec -I $protos_dir \
+    --go_out $root_dir/pb --go_opt paths=source_relative \
+    --go-grpc_out $root_dir/pb --go-grpc_opt paths=source_relative \
+    $protos_dir/*.proto
+
+protoc -I $protos_dir --grpc-gateway_out $root_dir/pb \
+    --grpc-gateway_opt logtostderr=true \
+    --grpc-gateway_opt paths=source_relative \
+    --grpc-gateway_opt generate_unbound_methods=true \
+    $protos_dir/*.proto
 
 # cp golang client code
 mkdir -p $root_dir/clients/go/pb

@@ -21,6 +21,7 @@ class GreeterServiceClient extends \Grpc\BaseStub {
      * @param \App\Grpc\Hello\HelloReq $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\UnaryCall
      */
     public function SayHello(\App\Grpc\Hello\HelloReq $argument,
       $metadata = [], $options = []) {

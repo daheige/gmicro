@@ -238,7 +238,9 @@ func TestErrorReverseProxyFunc(t *testing.T) {
 }
 
 // rpc service entry
-type greeterService struct{}
+type greeterService struct {
+	pb.UnimplementedGreeterServiceServer
+}
 
 func (s *greeterService) SayHello(ctx context.Context, in *pb.HelloReq) (*pb.HelloReply, error) {
 	// panic(111)

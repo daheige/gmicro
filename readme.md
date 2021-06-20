@@ -21,14 +21,20 @@
     
 # upgrade go grpc tools
   
-    please perform the following operations in order
     # go gRPC tools
-    go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
-    go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
-    go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
+    go get -v github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
+    go get -v github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
+    go get -v github.com/golang/protobuf/proto
+    
+    go get -v google.golang.org/protobuf/cmd/protoc-gen-go
+    
+    # if you can't use it, please use go get below
+    # go get -v github.com/golang/protobuf/protoc-gen-go
+    
+    go get -v google.golang.org/grpc/cmd/protoc-gen-go-grpc
     
     # go validator
-    go get github.com/go-playground/validator/v10
+    go get -v github.com/go-playground/validator/v10
     
     # after successful execution, 3 binary files will be generated under the $GOBIN directory.
     # protoc-gen-grpc-gateway
@@ -37,11 +43,11 @@
     # google api link: github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis
     
     # protoc inject tag
-    # go get -u github.com/favadi/protoc-go-inject-tag  
+    go get -v github.com/favadi/protoc-go-inject-tag  
     
 # Google APIs
 
-    https://github.com/grpc-ecosystem/grpc-gateway/tree/master/third_party/googleapis
+    https://github.com/google/googleapis
 
     ============
     
