@@ -18,6 +18,7 @@
 # gmicro action
 
     see example or see https://github.com/daheige/goapp
+    github.com/daheige/gmicro-demo
     
 # upgrade go grpc tools
   
