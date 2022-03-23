@@ -38,10 +38,11 @@ https://grpc-ecosystem.github.io/grpc-gateway/
 
 https://github.com/daheige/goapp
 
-  Old projects can continue to use the v1 version, and new projects can start to use the v2 version. 
-  
-  Note that the gmicro address has changed, and the v2 version is github.com/daheige/gmicro/v2 
-    
+https://github.com/daheige/gmicro-demo
+
+Old projects can continue to use the v1 version, and new projects can start to use the v2 version.
+Note that the gmicro address has changed, and the v2 version is github.com/daheige/gmicro/v2
+
 # change log
 
 | options  | desc | time |
