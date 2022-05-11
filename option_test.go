@@ -1,6 +1,7 @@
 package gmicro
 
 import (
+	"context"
 	"net/http"
 	"syscall"
 	"testing"
@@ -8,7 +9,6 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"

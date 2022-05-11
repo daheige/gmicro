@@ -72,7 +72,6 @@ func TestNewService(t *testing.T) {
 		WithShutdownFunc(shutdownFunc),
 		WithPreShutdownDelay(1*time.Second),
 		WithHandlerFromEndpoint(pb.RegisterGreeterServiceHandlerFromEndpoint),
-		// WithHandlerFromEndpoint(HandlerFromEndpoint(pb.RegisterGreeterServiceHandlerFromEndpoint)),
 		WithLogger(LoggerFunc(log.Printf)),
 		WithPrometheus(true),
 	)
@@ -314,7 +313,7 @@ func TestGRPCAndHttpServer(t *testing.T) {
 		WithRouteOpt(route),
 		WithShutdownFunc(shutdownFunc),
 		WithPreShutdownDelay(2*time.Second),
-		WithHandlerFromEndpoint(pb.RegisterGreeterServiceHandlerFromEndpoint),
+		// WithHandlerFromEndpoint(pb.RegisterGreeterServiceHandlerFromEndpoint),
 		WithLogger(LoggerFunc(log.Printf)),
 		WithRequestAccess(true),
 		WithPrometheus(true),

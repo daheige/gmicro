@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	gmicro "github.com/daheige/gmicro/v2"
+	"github.com/daheige/gmicro/v2"
 	"github.com/daheige/gmicro/v2/example/pb"
 	"google.golang.org/grpc"
 )

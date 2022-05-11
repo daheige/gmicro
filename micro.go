@@ -47,7 +47,7 @@ type AnnotatorFunc func(context.Context, *http.Request) metadata.MD
 // handlerFromEndpoint http gw endPoint
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
 type HandlerFromEndpoint func(ctx context.Context, mux *gRuntime.ServeMux,
-	grpcAddressAndPort string, opts []grpc.DialOption) error
+	endpoint string, opts []grpc.DialOption) error
 
 // HTTPHandlerFunc is the http middleware handler function.
 type HTTPHandlerFunc func(*gRuntime.ServeMux) http.Handler
