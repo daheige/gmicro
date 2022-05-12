@@ -37,7 +37,7 @@ RUN go env -w GO111MODULE=on; go env -w GOPROXY=https://goproxy.cn,https://mirro
     go install github.com/golang/mock/mockgen@latest  && \
     go install github.com/favadi/protoc-go-inject-tag@latest
 
-# install nodejs
+# install nodejs and grpc tools
 RUN cd /usr/local/ && \
      wget https://nodejs.org/dist/$NODE_VER/node-$NODE_VER-linux-x64.tar.xz && \
      xz -d node-$NODE_VER-linux-x64.tar.xz && \
@@ -49,4 +49,7 @@ RUN cd /usr/local/ && \
      echo "export NODEJS_HOME=/usr/local/nodejs" >> ~/.bashrc && \
      echo 'export PATH=$NODEJS_HOME/bin:$PATH' >> ~/.bashrc && \
      source ~/.bashrc && \
-     npm install -g cnpm --registry=https://registry.npm.taobao.org
+     npm install -g cnpm --registry=https://registry.npm.taobao.org && \
+     cnpm install -g grpc-tools  && \
+     cnpm install -g google-protobuf && \
+     cnpm install -g grpc \
