@@ -47,9 +47,9 @@ Note that the gmicro address has changed, and the v2 version is github.com/dahei
 
 | options         | desc                                      | time       |
 |:----------------|:------------------------------------------|:-----------|
-| grpc gateway    | upgrade grpc gateway to vv2.10.0          | 2022-05-11 |
+| grpc gateway    | upgrade grpc gateway to v2.10.0           | 2022-05-11 |
 | grpc            | upgrade go grpc to v1.46.0                | 2021-05-11 |
-| protobuf        | upgrade protobuf to v1.26.0               | 2021-05-11 |
+| protobuf        | upgrade protobuf to v1.28.0               | 2021-05-11 |
 | grpc dockerfile | upgrade go to v1.16.15 and protoc v3.15.8 | 2021-05-11 |
 
 | options  | desc                              | time       |

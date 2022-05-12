@@ -37,7 +37,7 @@ grpc_tools="go-grpc-tools"
 #运行容器,如果需要运行端口，请自行修改这一行就可以
 docker run -it -d --name $containerName -v $workdir/www/go-grpc:/go/go-grpc -v $workdir/logs:/go/logs grpc_tools:$version
 
-echo "docker运行go-api成功!"
+echo "go-grpc docker运行成功!"
 echo "开始你的go-grpc应用之旅吧!"
 
 exit 0
