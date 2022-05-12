@@ -32,7 +32,7 @@ RUN mkdir -p /tmp/protoc && \
 # 安装golang
 RUN cd /usr/local/ && wget https://golang.google.cn/dl/go$GO_VERSION.linux-amd64.tar.gz && \
     tar zxvf go$GO_VERSION.linux-amd64.tar.gz && \
-    mkdir -p /mygo/{pkg,bin,src} && \
+    mkdir -p /mygo/pkg && mkdir -p /mygo/src && make -p /mygo/bin && \
     echo "export GOROOT=/usr/local/go" >> ~/.bashrc && \
     echo "export GOOS=linux" >> ~/.bashrc && \
     echo "export GOPATH=/mygo" >> ~/.bashrc && \
