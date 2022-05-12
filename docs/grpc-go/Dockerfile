@@ -1,4 +1,4 @@
-FROM ubuntu:20.04 as builder
+FROM ubuntu:20.04
 
 RUN apt-get update && apt-get -y install zip unzip git vim curl make wget && apt-get clean
 
@@ -15,6 +15,7 @@ ENV NODE_VER v16.15.0
 # golang version
 ENV GO_VERSION=1.16.15
 ENV GOPROXY=https://goproxy.cn,https://mirrors.aliyun.com/goproxy/,direct
+ENV GO_URL=https://golang.google.cn/dl/go${GO_VERSION}.linux-amd64.tar.gz
 
 # 安装protoc工具
 RUN mkdir -p /tmp/protoc && \
@@ -29,8 +30,9 @@ RUN mkdir -p /tmp/protoc && \
     echo "export LC_ALL=$LANG" >> /etc/profile && \
     echo $TZ > /etc/timezone
 
+
 # 安装golang
-RUN cd /usr/local/ && wget https://golang.google.cn/dl/go$GO_VERSION.linux-amd64.tar.gz && \
+RUN cd /usr/local/ && wget $GO_URL && \
     tar zxvf go$GO_VERSION.linux-amd64.tar.gz && \
     mkdir -p /mygo/pkg && mkdir -p /mygo/src && make -p /mygo/bin && \
     echo "export GOROOT=/usr/local/go" >> ~/.bashrc && \
