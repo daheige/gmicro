@@ -45,23 +45,29 @@ Note that the gmicro address has changed, and the v2 version is github.com/dahei
 
 # change log
 
-| options  | desc | time |
-| :-----       | :---- |:----|
+| options         | desc                                      | time       |
+|:----------------|:------------------------------------------|:-----------|
+| grpc gateway    | upgrade grpc gateway to vv2.10.0          | 2022-05-11 |
+| grpc            | upgrade go grpc to v1.46.0                | 2021-05-11 |
+| protobuf        | upgrade protobuf to v1.26.0               | 2021-05-11 |
+| grpc dockerfile | upgrade go to v1.16.15 and protoc v3.15.8 | 2021-05-11 |
+
+| options  | desc                              | time       |
+| :-----       |:----------------------------------|:-----------|
 | grpc gateway | upgrade grpc gateway to v2.4.0 | 2021-06-19 |
 | grpc         | upgrade go grpc to v1.38.0 | 2021-06-19 |
 | protobuf     | upgrade protobuf to v1.26.0 | 2021-06-19 |
 
 # grpc tools
 
-    please do the following:
+    please do the following or see example/grpc_tools.sh
     # go gRPC tools
-    go get -v \
-    github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway \
-    github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2 \
-    google.golang.org/protobuf/cmd/protoc-gen-go \
-    google.golang.org/grpc/cmd/protoc-gen-go-grpc
+    go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest
+    go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@latest
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
     
-    # go validator
+    #go validator
     go get github.com/go-playground/validator/v10
     
     #This will place four binaries in your $GOBIN;
@@ -71,7 +77,7 @@ Note that the gmicro address has changed, and the v2 version is github.com/dahei
     #    protoc-gen-go-grpc
     
     # protoc inject tag
-    # go get -u github.com/favadi/protoc-go-inject-tag
+    go install github.com/favadi/protoc-go-inject-tag
     
 # Google APIs
 

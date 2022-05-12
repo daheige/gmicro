@@ -3,7 +3,7 @@ syntax = "proto3";	// 指定语法格式，注意 proto3 不再支持 proto2 的
 // protoc 版本低于3.9.x请用这个
 // option go_package = "pb";
 
-// protoc 3.11.4 版本请用这个
+// protoc 3.11.4+ 版本请用这个
 option go_package = "./;pb";
 
 package App.Grpc.Hello; // 指定生成php文件的命名空间，防止命名冲突
