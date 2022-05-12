@@ -1,6 +1,9 @@
 FROM golang:1.16.12
 
-RUN apt-get update && apt-get -y install unzip && apt-get clean
+RUN apt-get update && apt-get install -y \
+	build-essential autoconf git vim \
+	automake libtool curl make g++ unzip \
+	&& apt-get clean
 
 # install protobuf
 ENV PROTOC_VER 3.15.8
@@ -52,4 +55,5 @@ RUN cd /usr/local/ && \
      npm install -g cnpm --registry=https://registry.npm.taobao.org && \
      cnpm install -g grpc-tools  && \
      cnpm install -g google-protobuf && \
-     cnpm install -g grpc \
+     cnpm install -g grpc
+
