@@ -1,0 +1,13 @@
+# grpc nodejs package
+```json
+{
+    "devDependencies": {
+    "grpc-tools": "^1.11.2"
+    },
+    "dependencies": {
+    "google-protobuf": "^3.20.1",
+    "grpc": "^1.24.11",
+    "grpc-tools": "^1.11.2"
+    }
+}
+```
