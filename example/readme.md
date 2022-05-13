@@ -1,6 +1,6 @@
 # grpc example
 
-[![gmicro](grpc-run.jpg "jetbrains")](https://github.com/daheige/gmicro)
+[![gmicro](grpc-run.jpg "gmicro")](https://github.com/daheige/gmicro)
 
 # grpc-tools
 
