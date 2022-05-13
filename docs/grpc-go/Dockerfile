@@ -1,6 +1,6 @@
 FROM ubuntu:20.04
 
-RUN apt-get update && apt-get -y install zip unzip git vim curl make wget && apt-get clean
+RUN apt-get update && apt-get -y install zip unzip git vim curl make wget xz-utils && apt-get clean
 
 # protoc version
 ENV PROTOC_VER 3.20.1
