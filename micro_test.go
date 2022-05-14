@@ -12,11 +12,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/daheige/gmicro/example/pb"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-
-	"github.com/daheige/gmicro/example/pb"
 )
 
 var reverseProxyFunc HandlerFromEndpoint

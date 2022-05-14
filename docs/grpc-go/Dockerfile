@@ -11,11 +11,11 @@ RUN wget -q -P /tmp/temp/ https://github.com/protocolbuffers/protobuf/releases/d
 
 RUN go env -w GO111MODULE=on; go env -w GOPROXY=https://goproxy.cn,https://mirrors.aliyun.com/goproxy/,direct;go env -w CGO_ENABLED=0 &&  \
     go get -u github.com/golang/protobuf/proto && \
-    go get -u github.com/golang/protobuf/protoc-gen-go && \
-    go get -u google.golang.org/grpc  && \
-    go get -u google.golang.org/grpc/cmd/protoc-gen-go-grpc  && \
-    go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway  && \
-    go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger && \
+    go install github.com/golang/protobuf/protoc-gen-go@latest && \
+    go install google.golang.org/grpc@latest  && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest  && \
+    go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@latest  && \
+    go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@latest && \
     go get -u github.com/go-playground/validator/v10 && \
-    go get  -u  github.com/golang/mock/mockgen  && \
-    go get -u github.com/favadi/protoc-go-inject-tag
+    go install github.com/golang/mock/mockgen  && \
+    go install github.com/favadi/protoc-go-inject-tag@latest

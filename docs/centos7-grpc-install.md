@@ -1,13 +1,25 @@
+# go v1.16.15安装
+
+    cd /usr/local
+    sudo wget https://golang.google.cn/dl/go1.18.2.linux-amd64.tar.gz
+    sudo tar zxvf go1.18.2.linux-amd64.tar.gz
+    sudo chown -R $USER /usr/local/go
+    
+    设置好go env
+    go env -w GO111MODULE=on
+    go env -w GOPROXY=https://goproxy.cn,https://mirrors.aliyun.com/goproxy/,direct
+    go env -w CGO_ENABLED=0
+
 # centos7 protoc工具安装
 
-    1、下载https://github.com/protocolbuffers/protobuf/archive/v3.11.4.tar.gz
+    1、下载https://github.com/protocolbuffers/protobuf/archive/v3.15.8.tar.gz
         cd /usr/local/src
-        sudo wget https://github.com/protocolbuffers/protobuf/archive/v3.11.4.tar.gz
+        sudo wget https://github.com/protocolbuffers/protobuf/archive/v3.15.8.tar.gz
     
     2、开始安装
-        sudo mv v3.11.4.tar.gz protobuf-3.11.4.tar.gz
-        sudo tar zxvf protobuf-3.11.4.tar.gz
-        cd protobuf-3.11.4
+        sudo mv v3.15.8.tar.gz protobuf-3.15.8.tar.gz
+        sudo tar zxvf protobuf-3.15.8.tar.gz
+        cd protobuf-3.15.8
         sudo yum install gcc-c++ cmake libtool
         $ sudo mkdir /usr/local/protobuf
 
@@ -24,25 +36,23 @@
         安装完成后,查看版本:
         $ cd /usr/local/protobuf/bin
         $ ./protoc --version
-        libprotoc 3.11.4
+        libprotoc 3.15.8
         
         建立软链接
-        
         $ sudo ln -s /usr/local/protobuf/bin/protoc /usr/bin/protoc
 
 # go protoc工具安装
 
+    执行如下命令
     go get -u github.com/golang/protobuf/proto
-    
-    go get -u github.com/golang/protobuf/protoc-gen-go
-
-    go get -u google.golang.org/grpc
-
-    cd $GOPATH/pkg/mod/github.com/golang/protobuf@v1.3.5/protoc-gen-go
-    go install
-
-    cd $GOPATH/pkg/mod/github.com/golang/protobuf@v1.3.5/proto
-    go install
+    go install github.com/golang/protobuf/protoc-gen-go@latest
+    go install google.golang.org/grpc@latest
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+    go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@latest
+    go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@latest
+    go get -u github.com/go-playground/validator/v10
+    go install  github.com/golang/mock/mockgen@latest
+    go install github.com/favadi/protoc-go-inject-tag@latest
 
 # centos7 php grpc_php工具安装
 

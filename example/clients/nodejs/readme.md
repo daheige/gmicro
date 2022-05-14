@@ -1,34 +1,8 @@
-# install nodejs
-
-    cd /usr/local/
-    sudo wget https://nodejs.org/dist/v12.16.2/node-v12.16.2-linux-x64.tar.xz
-    sudo xz -d node-v12.16.2-linux-x64.tar.xz
-    sudo tar xvf node-v12.16.2-linux-x64.tar.xz
-    sudo mv node-v12.16.2-linux-x64 nodejs
-    
-    For the convenience of the current user, set nodejs to belong to the current user,
-    which is not recommended in the production environment
-    
-    sudo chown -R $USER /usr/local/nodejs
-    sudo ln -s /usr/local/nodejs/bin/npm /usr/bin/npm
-    sudo chmod +x /usr/bin/npm
-    vim ~/.bashrc 
-    export NODEJS_HOME=/usr/local/nodejs
-    export PATH=$NODEJS_HOME/bin:$PATH
-
-    source ~/.bashrc
-
 # install cnpm
 
     npm install -g cnpm --registry=https://registry.npm.taobao.org
 
 # nodejs gprc install
-
-    cnpm install grpc-tools --save-dev
-    cnpm install google-protobuf --save
-    cnpm install grpc --save
-
-    or 
     
     cnpm install
      

@@ -7,10 +7,13 @@ if [ -z $protoExec ]; then
     exit 0
 fi
 
-grpc_node_plugin=$(which "grpc_node_plugin")
-if [ -z $grpc_node_plugin ]; then
-    echo 'Please install grpc_node_plugin'
-    exit 0
+jsProtoExec=$(which "grpc_tools_node_protoc")
+if [ -z $jsProtoExec ]; then
+    grpc_node_plugin=$(which "grpc_node_plugin")
+    if [ -z $grpc_node_plugin ]; then
+        echo 'Please install grpc_node_plugin or grpc_tools_node_protoc';
+        exit 0
+    fi
 fi
 
 echo "\n\033[0;32mGenerating codes...\033[39;49;0m\n"
@@ -21,13 +24,28 @@ mkdir -p $nodejs_pb_dir
 
 cd $root_dir/protos
 
-$protoExec --js_out=import_style=commonjs,binary:$nodejs_pb_dir --plugin=protoc-gen-grpc=$grpc_node_plugin --grpc_out=$nodejs_pb_dir *.proto
+if [ ! -z $jsProtoExec ]; then
+    # protoc generate js code with grpc_tools_node_protoc
+    $jsProtoExec --js_out=import_style=commonjs,binary:$nodejs_pb_dir \
+      --grpc_out=$nodejs_pb_dir --plugin=protoc-gen-grpc=`which grpc_tools_node_protoc_plugin` *.proto
+else
+  grpc_node_plugin=$(which "grpc_node_plugin")
+  if [ -z $grpc_node_plugin ]; then
+      echo 'Please install grpc_node_plugin'
+      exit 0
+  fi
+
+  # protoc generate js code without grpc_tools_node_protoc,but use grpc_node_plugin
+  $protoExec --js_out=import_style=commonjs,binary:$nodejs_pb_dir --plugin=protoc-gen-grpc=$grpc_node_plugin --grpc_out=$nodejs_pb_dir *.proto
+fi
 
 # replace
 os=`uname -s`
 if [ $os == "Darwin" ];then
     # mac os LC_CTYPE config
     export LC_CTYPE=C
+
+    # mac os
     sed -i "" 's/var google_api_annotations_pb/\/\/ var google_api_annotations_pb/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
     sed -i "" 's/let google_api_annotations_pb/\/\/ let google_api_annotations_pb/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
     sed -i "" 's/goog.object.extend(proto, google_api_annotations_pb)/\/\/ this code deleted/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
