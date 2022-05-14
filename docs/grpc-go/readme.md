@@ -1,8 +1,6 @@
 # grpc-go tools
-    
-    golang grpc tools
-    
-# 参考
+    go grpc tools
+    grpc dockerfile
 
-    https://github.com/alikor/grpc_go
-    https://github.com/hyperjiang/docker-go
+# 参考
+https://github.com/hyperjiang/docker-go
