@@ -5,7 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	gRuntime "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 )
@@ -121,7 +120,7 @@ func WithGRPCDialOption(dialOption ...grpc.DialOption) Option {
 }
 
 // WithMuxOption returns an Option to append a mux option
-func WithMuxOption(muxOption ...runtime.ServeMuxOption) Option {
+func WithMuxOption(muxOption ...gRuntime.ServeMuxOption) Option {
 	return func(s *Service) {
 		s.muxOptions = append(s.muxOptions, muxOption...)
 	}

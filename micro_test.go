@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -13,9 +13,10 @@ import (
 	"time"
 
 	"github.com/daheige/gmicro/v2/example/pb"
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	gRuntime "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
@@ -27,7 +28,7 @@ var (
 func initConf() {
 	reverseProxyFunc = func(
 		ctx context.Context,
-		mux *runtime.ServeMux,
+		mux *gRuntime.ServeMux,
 		grpcHostAndPort string,
 		opts []grpc.DialOption,
 	) error {
@@ -152,7 +153,7 @@ func TestNewService(t *testing.T) {
 	resp, err = client.Get(fmt.Sprintf("http://127.0.0.1:%d/health", httpPort))
 	should.NoError(err)
 	should.Equal(http.StatusOK, resp.StatusCode)
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	should.NoError(err)
 	should.Equal("OK", string(b))
 
@@ -199,8 +200,8 @@ func TestNewService(t *testing.T) {
 	s4.AddHandlerFromEndpoint(reverseProxyFunc)
 
 	go func() {
-		err := s4.Start(httpPort, grpcPort)
-		should.NoError(err)
+		e := s4.Start(httpPort, grpcPort)
+		should.NoError(e)
 	}()
 
 	// wait 1 second for the server start
@@ -234,7 +235,7 @@ func TestErrorReverseProxyFunc(t *testing.T) {
 	errText := "reverse proxy func error"
 	reverseProxyFunc = func(
 		ctx context.Context,
-		mux *runtime.ServeMux,
+		mux *gRuntime.ServeMux,
 		grpcHostAndPort string,
 		opts []grpc.DialOption,
 	) error {
@@ -377,7 +378,7 @@ func TestGRPCAndHttpServer(t *testing.T) {
 	resp, err = client.Get(fmt.Sprintf("http://127.0.0.1:%d/health", sharePort))
 	should.NoError(err)
 	should.Equal(http.StatusOK, resp.StatusCode)
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	should.NoError(err)
 	should.Equal("OK", string(b))
 
@@ -436,7 +437,7 @@ func TestGRPCServerWithoutGateway(t *testing.T) {
 	should.Error(err)
 
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(s.gRPCAddress, grpc.WithInsecure())
+	conn, err := grpc.Dial(s.gRPCAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 #编译golang可执行文件
 root_dir=$(cd "$(dirname "$0")"; cd ..; pwd)
 

@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	gRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	gValidator "github.com/grpc-ecosystem/go-grpc-middleware/validator"
 	gPrometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
@@ -199,9 +198,8 @@ func NewService(opts ...Option) *Service {
 	s.mux = gRuntime.NewServeMux(s.muxOptions...)
 
 	s.gRPCServerOptions = append(s.gRPCServerOptions,
-		middleware.WithStreamServerChain(s.streamInterceptors...))
-	s.gRPCServerOptions = append(s.gRPCServerOptions,
-		middleware.WithUnaryServerChain(s.unaryInterceptors...))
+		grpc.ChainStreamInterceptor(s.streamInterceptors...),
+		grpc.ChainUnaryInterceptor(s.unaryInterceptors...))
 
 	s.GRPCServer = grpc.NewServer(
 		s.gRPCServerOptions...,
@@ -240,7 +238,6 @@ func (s *Service) RequestInterceptor(ctx context.Context, req interface{}, info 
 
 	s.logger.Printf("exec begin\n")
 	s.logger.Printf("client_ip: %s\n", clientIP)
-	// s.logger.Printf("request: %v\n", req)
 
 	// request ctx key
 	if logID := ctx.Value(XRequestID); logID == nil {
@@ -283,7 +280,7 @@ func (s *Service) AddRoute(routes ...Route) {
 
 // Start starts the microservice with listening on the ports
 // start grpc gateway and http server on different port
-func (s *Service) Start(httpPort int, grpcPort int) error {
+func (s *Service) Start(httpPort, grpcPort int) error {
 	// http gw host and grpc host
 	s.httpServerAddress = fmt.Sprintf("0.0.0.0:%d", httpPort)
 	s.gRPCAddress = fmt.Sprintf("0.0.0.0:%d", grpcPort)
@@ -566,9 +563,8 @@ func NewServiceWithoutGateway(opts ...Option) *Service {
 	s.muxOptions = nil
 
 	s.gRPCServerOptions = append(s.gRPCServerOptions,
-		middleware.WithStreamServerChain(s.streamInterceptors...))
-	s.gRPCServerOptions = append(s.gRPCServerOptions,
-		middleware.WithUnaryServerChain(s.unaryInterceptors...))
+		grpc.ChainStreamInterceptor(s.streamInterceptors...),
+		grpc.ChainUnaryInterceptor(s.unaryInterceptors...))
 
 	s.GRPCServer = grpc.NewServer(
 		s.gRPCServerOptions...,
