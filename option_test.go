@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	gRuntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -99,9 +99,9 @@ func TestWithHTTPServer(t *testing.T) {
 
 func TestMuxOption(t *testing.T) {
 	s := NewService(
-		WithMuxOption(runtime.WithMarshalerOption(
-			runtime.MIMEWildcard,
-			&runtime.JSONPb{OrigName: true, EmitDefaults: true},
+		WithMuxOption(gRuntime.WithMarshalerOption(
+			gRuntime.MIMEWildcard,
+			&gRuntime.JSONPb{OrigName: true, EmitDefaults: true},
 		)),
 	)
 

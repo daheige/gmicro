@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/daheige/gmicro/example/pb"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	gRuntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
@@ -27,7 +27,7 @@ var (
 func initConf() {
 	reverseProxyFunc = func(
 		ctx context.Context,
-		mux *runtime.ServeMux,
+		mux *gRuntime.ServeMux,
 		grpcHostAndPort string,
 		opts []grpc.DialOption,
 	) error {
@@ -221,7 +221,7 @@ func TestErrorReverseProxyFunc(t *testing.T) {
 	errText := "reverse proxy func error"
 	reverseProxyFunc = func(
 		ctx context.Context,
-		mux *runtime.ServeMux,
+		mux *gRuntime.ServeMux,
 		grpcHostAndPort string,
 		opts []grpc.DialOption,
 	) error {
