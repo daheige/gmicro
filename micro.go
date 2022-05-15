@@ -23,6 +23,7 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
@@ -163,7 +164,11 @@ func NewService(opts ...Option) *Service {
 
 	// default dial option is using insecure connection
 	if len(s.gRPCDialOptions) == 0 {
-		s.gRPCDialOptions = append(s.gRPCDialOptions, grpc.WithInsecure())
+		// Deprecated: use WithTransportCredentials and insecure.NewCredentials()
+		// instead. Will be supported throughout 1.x.
+		// s.gRPCDialOptions = append(s.gRPCDialOptions, grpc.WithInsecure())
+		// so use grpc.WithTransportCredentials(insecure.NewCredentials()) as default grpc.DialOption
+		s.gRPCDialOptions = append(s.gRPCDialOptions, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
 	// install prometheus interceptor
@@ -545,7 +550,11 @@ func NewServiceWithoutGateway(opts ...Option) *Service {
 
 	// default dial option is using insecure connection
 	if len(s.gRPCDialOptions) == 0 {
-		s.gRPCDialOptions = append(s.gRPCDialOptions, grpc.WithInsecure())
+		// Deprecated: use WithTransportCredentials and insecure.NewCredentials()
+		// instead. Will be supported throughout 1.x.
+		// s.gRPCDialOptions = append(s.gRPCDialOptions, grpc.WithInsecure())
+		// so use grpc.WithTransportCredentials(insecure.NewCredentials()) as default grpc.DialOption
+		s.gRPCDialOptions = append(s.gRPCDialOptions, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
 	// install prometheus interceptor
@@ -633,7 +642,7 @@ func (s *Service) StopGRPCWithoutGateway() {
 }
 
 // ServeFile serves a file
-func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, _ map[string]string) {
 	dir := s.staticDir
 	if s.staticDir == "" {
 		dir, _ = os.Getwd()
