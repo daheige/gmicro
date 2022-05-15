@@ -5,7 +5,7 @@
     sudo tar zxvf go1.16.15.linux-amd64.tar.gz
     sudo chown -R $USER /usr/local/go
     
-    设置好go env
+    设置好go env环境变量
     go env -w GO111MODULE=on
     go env -w GOPROXY=https://goproxy.cn,https://mirrors.aliyun.com/goproxy/,direct
     go env -w CGO_ENABLED=0

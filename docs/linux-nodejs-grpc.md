@@ -2,7 +2,7 @@
 
     cd /usr/local/
     sudo wget https://nodejs.org/dist/v12.16.2/node-v12.16.2-linux-x64.tar.xz
-    # 如果使用的是centos系统，请自行先安装好xz，这里我用的ubuntu20.04系统
+    # 这里我用的ubuntu20.04系统，如果使用的是centos系统，请自行先安装好xz
     sudo apt-get install xz-utils
     sudo xz -d node-v12.16.2-linux-x64.tar.xz
     sudo tar xvf node-v12.16.2-linux-x64.tar
