@@ -52,7 +52,7 @@ RUN go env -w GO111MODULE=on; go env -w GOPROXY=$GOPROXY;go env -w CGO_ENABLED=0
     go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@latest && \
     go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest  && \
     go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@latest && \
-    go get -u github.com/go-playground/validator/v10 && \
+    go install github.com/go-playground/validator/v10@latest && \
     go install github.com/golang/mock/mockgen@latest  && \
     go install github.com/favadi/protoc-go-inject-tag@latest
 

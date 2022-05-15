@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#初始化目录权限
+
 root_dir=$(cd "$(dirname "$0")"; cd ..; pwd)
 
 #docker数据卷映射到主机的目录

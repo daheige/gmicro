@@ -45,6 +45,11 @@ Note that the gmicro address has changed, and the v2 version is github.com/dahei
 
 # change log
 
+| options         | desc                 | time       |
+|:----------------|:---------------------|:-----------|
+| grpc tools      | update docs          | 2022-05-15 |
+| grpc dockerfile | update go grpc tools | 2022-05-15 |
+
 | options         | desc                                      | time       |
 |:----------------|:------------------------------------------|:-----------|
 | grpc gateway    | upgrade grpc gateway to v2.10.0           | 2022-05-11 |
