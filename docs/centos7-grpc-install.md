@@ -40,17 +40,17 @@
         
         建立软链接
         $ sudo ln -s /usr/local/protobuf/bin/protoc /usr/bin/protoc
+        $ sudo chmod +x /usr/bin/protoc
 
 # go protoc工具安装
 
     执行如下命令
-    go get -u github.com/golang/protobuf/proto
     go install github.com/golang/protobuf/protoc-gen-go@latest
     go install google.golang.org/grpc@latest
     go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
     go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@latest
     go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@latest
-    go get -u github.com/go-playground/validator/v10
+    go install github.com/go-playground/validator/v10@latest
     go install  github.com/golang/mock/mockgen@latest
     go install github.com/favadi/protoc-go-inject-tag@latest
 

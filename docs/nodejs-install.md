@@ -2,6 +2,7 @@
 
     cd /usr/local/
     sudo wget https://nodejs.org/dist/v12.16.2/node-v12.16.2-linux-x64.tar.xz
+    # 这里我用的是ubuntu操作系统，如果使用centos，请自行安装xz工具
     sudo apt-get install xz-utils
     sudo xz -d node-v12.16.2-linux-x64.tar.xz
     sudo tar xvf node-v12.16.2-linux-x64.tar

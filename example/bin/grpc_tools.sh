@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # go gRPC tools
 go get -v github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway

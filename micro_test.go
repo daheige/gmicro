@@ -18,9 +18,11 @@ import (
 	"google.golang.org/grpc"
 )
 
-var reverseProxyFunc HandlerFromEndpoint
-var httpPort, grpcPort, sharePort int
-var shutdownFunc func()
+var (
+	reverseProxyFunc              HandlerFromEndpoint
+	httpPort, grpcPort, sharePort int
+	shutdownFunc                  func()
+)
 
 func initConf() {
 	reverseProxyFunc = func(

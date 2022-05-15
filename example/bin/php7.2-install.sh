@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 #ubuntu php7.2 install
 phpExec=`which php`
 if [ ! -z $phpExec ]; then

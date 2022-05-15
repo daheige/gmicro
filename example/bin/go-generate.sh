@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 root_dir=$(cd "$(dirname "$0")"; cd ..; pwd)
 
 protoExec=$(which "protoc")
