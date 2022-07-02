@@ -98,7 +98,7 @@ func DefaultHTTPHandler(mux *gRuntime.ServeMux) http.Handler {
 // so we can use the standard library to provide both HTTP/1.1 and HTTP/2 functions on the same port
 // The h2c.NewHandler method has been specially processed, and h2c.NewHandler will return an http.handler
 // The main internal logic is to intercept all h2c traffic, then hijack and redirect it
-// to the corresponding Hander according to different request traffic types to process
+// to the corresponding handler according to different request traffic types to process
 func GRPCHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
 	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
