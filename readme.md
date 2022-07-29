@@ -34,7 +34,7 @@ https://github.com/grpc/grpc-go
 
 https://grpc-ecosystem.github.io/grpc-gateway/
 
-# gmicro v1.2.x action
+# gmicro action
 
 https://github.com/daheige/goapp
 
