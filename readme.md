@@ -19,7 +19,7 @@
     capabilities of grpc server.
 
 # go version
-    if you use go version < 1.16,please use gmicro tag v2.1.8
+    if you use go version < 1.16,please use gmicro tag v1.3.3
     else use gmicro tag v2.3.0 higher version.
 
 # installation
