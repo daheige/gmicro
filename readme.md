@@ -20,7 +20,7 @@
 
 # go version
     if you use go version < 1.16,please use gmicro tag v2.1.8
-    else use gmicro tag v2.2.1 or v2.3.0 higher version.
+    else use gmicro tag v2.3.0 higher version.
 
 # installation
   
