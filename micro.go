@@ -39,7 +39,7 @@ const (
 // refer: https://github.com/golang/protobuf/blob/v1.4.3/jsonpb/encode.go#L30
 var defaultMuxOption = gRuntime.WithMarshalerOption(gRuntime.MIMEWildcard, &gRuntime.JSONPb{})
 
-// AnnotatorFunc is the annotator function is for injecting meta data from http request into gRPC context
+// AnnotatorFunc is the annotator function is for injecting metadata from http request into gRPC context
 type AnnotatorFunc func(context.Context, *http.Request) metadata.MD
 
 // HandlerFromEndpoint is the callback that the caller should implement
@@ -143,7 +143,7 @@ func defaultService() *Service {
 	s.streamInterceptors = append(s.streamInterceptors, gValidator.StreamServerInterceptor())
 	s.unaryInterceptors = append(s.unaryInterceptors, gValidator.UnaryServerInterceptor())
 
-	// apply default marshaler option for mux, can be replaced by using MuxOption
+	// apply default marshal option for mux, can be replaced by using MuxOption
 	s.muxOptions = append(s.muxOptions, defaultMuxOption)
 
 	return &s
@@ -221,46 +221,49 @@ func NewService(opts ...Option) *Service {
 
 // RequestInterceptor request interceptor to record basic information of the request
 func (s *Service) RequestInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo,
-	handler grpc.UnaryHandler) (res interface{}, err error) {
+	handler grpc.UnaryHandler) (reply interface{}, err error) {
+	t := time.Now()
+	md := GetIncomingMD(ctx) // get request metadata
+	requestID := GetStringFromMD(md, XRequestID)
+	if requestID == "" {
+		requestID = Uuid()
+		md.Set(XRequestID.String(), requestID)
+	}
+
 	defer func() {
 		if r := recover(); r != nil {
 			// the error format defined by grpc must be used here to return code, desc
 			err = status.Errorf(codes.Internal, "%s", "server inner error")
-
-			s.logger.Printf("reply: %v\n", res)
-			s.logger.Printf("exec panic: %v\n", r)
-			s.logger.Printf("full stack: %s\n", string(debug.Stack()))
+			s.logger.Printf("x-request-id:%s exec panic:%v req:%v reply:%v\n", requestID, r, req, reply)
+			s.logger.Printf("x-request-id:%s full stack:%s\n", requestID, string(debug.Stack()))
 		}
 	}()
 
-	t := time.Now()
+	// request ip
 	clientIP, _ := GetGRPCClientIP(ctx)
 
-	s.logger.Printf("exec begin\n")
-	s.logger.Printf("client_ip: %s\n", clientIP)
+	// exec begin
+	s.logger.Printf("exec begin,method:%s x-request-id:%s client-ip:%s\n", info.FullMethod, requestID, clientIP)
 
-	// request ctx key
-	if logID := ctx.Value(XRequestID); logID == nil {
-		ctx = context.WithValue(ctx, XRequestID, RndUUID())
-	}
+	// set request ctx key
+	md.Set(GRPCClientIP.String(), clientIP)
+	md.Set(RequestMethod.String(), info.FullMethod)
+	md.Set(RequestURI.String(), info.FullMethod)
 
-	ctx = context.WithValue(ctx, GRPCClientIP, clientIP)
-	ctx = context.WithValue(ctx, RequestMethod, info.FullMethod)
-	ctx = context.WithValue(ctx, RequestURI, info.FullMethod)
+	ctx = metadata.NewIncomingContext(ctx, md)
 
-	res, err = handler(ctx, req)
+	reply, err = handler(ctx, req)
+
+	// exec end
 	ttd := time.Since(t).Milliseconds()
 	if err != nil {
-		s.logger.Printf("trace_error: %s\n", err.Error())
-		s.logger.Printf("exec time: %v\n", ttd)
-		s.logger.Printf("reply: %v\n", res)
-
+		s.logger.Printf("x-request-id:%s trace_error:%s reply:%v exec_time:%v\n", requestID, err.Error(), reply, ttd)
 		return nil, err
 	}
 
-	s.logger.Printf("exec end,cost time: %v ms\n", ttd)
+	s.logger.Printf("exec end,method:%s x-request-id:%s cost time:%vms\n", info.FullMethod, requestID, ttd)
 
-	return res, err
+	return reply, err
 }
 
 // GetPid gets the process id of server

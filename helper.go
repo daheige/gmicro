@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc/peer"
 )
 
@@ -78,4 +79,15 @@ func Md5(str string) string {
 	h := md5.New()
 	h.Write([]byte(str))
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+// Uuid uuid of version4
+// eg:eba1e8cd0460491049c644bdf3cf024d
+func Uuid() string {
+	u, err := uuid.NewRandom()
+	if err != nil {
+		return strings.Replace(RndUUID(), "-", "", -1)
+	}
+
+	return strings.Replace(u.String(), "-", "", -1)
 }

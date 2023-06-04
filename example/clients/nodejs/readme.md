@@ -13,6 +13,7 @@
 
     First start the server server.go
     % cd gmicro/example/server
+    % go run server.go
     2022/05/13 23:09:27 Starting http server and grpc server listening on 8081
 
     % node hello.js

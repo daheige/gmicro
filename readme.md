@@ -4,7 +4,7 @@
     Microservice prototype with gRPC + http +h2c+ gRPC gateway + logger + prometheus.
     Require Go version >= v1.13.
     Reference project：https://github.com/dakalab/micro
-   
+
 # supported features
 
     Golang grpc microservice scaffolding mainly encapsulates some components of grpc,
@@ -19,10 +19,10 @@
     capabilities of grpc server.
 
 # go version
-    if you use go version <= 1.16,please use gmicro tag v2.1.8
-    else use gmicro tag v2.2.0 or higher version.
+    if you use go version < 1.16,please use gmicro tag v2.1.8
+    else use gmicro tag v2.2.1 or v2.3.0 higher version.
 
-# installation 
+# installation
   
   go get -v github.com/daheige/gmicro/v2
   
@@ -48,6 +48,13 @@ Old projects can continue to use the v1 version, and new projects can start to u
 Note that the gmicro address has changed, and the v2 version is github.com/daheige/gmicro/v2
 
 # change log
+
+| options          | desc                                  | time       |
+|:-----------------|:--------------------------------------|:-----------|
+| go mod update    | update grpc mod                       | 2023-06-04 |
+| grpc metadata    | fix request md for RequestInterceptor | 2023-06-04 |
+| add x-request-id | fix request x-request-id from md      | 2023-06-04 |
+
 
 | options         | desc                 | time       |
 |:----------------|:---------------------|:-----------|

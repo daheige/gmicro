@@ -12,12 +12,13 @@ import (
 	"google.golang.org/grpc"
 )
 
-var sharePort int
-var shutdownFunc func()
+var (
+	sharePort    int
+	shutdownFunc func()
+)
 
 func init() {
 	sharePort = 8081
-
 	shutdownFunc = func() {
 		fmt.Println("Server shutting down")
 	}
@@ -114,6 +115,10 @@ func (s *greeterService) SayHello(ctx context.Context, in *pb.HelloReq) (*pb.Hel
 	// The panic simulated here can be automatically captured in the request
 	// interceptor to record the operation log
 	log.Println("req data: ", in)
+	time.Sleep(12 * time.Millisecond)
+
+	md := gmicro.GetIncomingMD(ctx)
+	log.Println("request md: ", md)
 	return &pb.HelloReply{
 		Name:    "hello," + in.Name,
 		Message: "call ok",
