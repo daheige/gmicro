@@ -106,6 +106,9 @@ func (s *greeterService) SayHello(ctx context.Context, in *pb.HelloReq) (*pb.Hel
 	// The panic simulated here can be automatically captured in the request
 	// interceptor to record the operation log
 	log.Println("req data: ", in)
+	md := gmicro.GetIncomingMD(ctx)
+	log.Println("request md: ", md)
+	time.Sleep(12 * time.Millisecond)
 	return &pb.HelloReply{
 		Name:    "hello," + in.Name,
 		Message: "call ok",

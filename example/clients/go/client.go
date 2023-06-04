@@ -5,7 +5,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/daheige/gmicro"
 	"github.com/daheige/gmicro/example/clients/go/pb"
+	"google.golang.org/grpc/metadata"
 
 	"google.golang.org/grpc"
 )
@@ -41,7 +43,11 @@ func main() {
 		name = os.Args[1]
 	}
 
-	res, err := c.SayHello(context.Background(), &pb.HelloReq{
+	md := metadata.New(map[string]string{
+		"x-request-id": gmicro.Uuid(),
+	})
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+	res, err := c.SayHello(ctx, &pb.HelloReq{
 		Name: name,
 	})
 
