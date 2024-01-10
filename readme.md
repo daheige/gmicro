@@ -81,6 +81,7 @@ Note that the gmicro address has changed, and the v2 version is github.com/dahei
 
 # grpc tools dockerfile
 https://github.com/daheige/gmicro-grpc-tools
+gmicro v2版本对应的grpc v1.60.1 待更新。。。
 
 # install grpc tools
 ```shell
