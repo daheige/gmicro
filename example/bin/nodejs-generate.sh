@@ -11,7 +11,8 @@ jsProtoExec=$(which "grpc_tools_node_protoc")
 if [ -z $jsProtoExec ]; then
     grpc_node_plugin=$(which "grpc_node_plugin")
     if [ -z $grpc_node_plugin ]; then
-        echo 'Please install grpc_node_plugin or grpc_tools_node_protoc';
+        echo 'Please install grpc_node_plugin or grpc_tools_node_protoc'
+        echo "npm install -g grpc-tools"
         exit 0
     fi
 fi
@@ -49,10 +50,13 @@ if [ $os == "Darwin" ];then
     sed -i "" 's/var google_api_annotations_pb/\/\/ var google_api_annotations_pb/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
     sed -i "" 's/let google_api_annotations_pb/\/\/ let google_api_annotations_pb/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
     sed -i "" 's/goog.object.extend(proto, google_api_annotations_pb)/\/\/ this code deleted/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
+    # replace grpc to @grpc/grpc-js
+    sed -i "" "s/require('grpc')/require('@grpc\/grpc-js')/g" `grep "require('grpc')" -rl $nodejs_pb_dir`
 else
     sed -i 's/var google_api_annotations_pb/\/\/ var google_api_annotations_pb/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
     sed -i 's/let google_api_annotations_pb/\/\/ let google_api_annotations_pb/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
     sed -i 's/goog.object.extend(proto, google_api_annotations_pb)/\/\/ this code deleted/g' `grep google_api_annotations_pb -rl $nodejs_pb_dir`
+    sed -i "s/require('grpc')/require('@grpc\/grpc-js')/g" `grep "require('grpc')" -rl $nodejs_pb_dir`
 fi
 
 echo "generating nodejs code success"

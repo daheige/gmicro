@@ -2,11 +2,19 @@
 ```json
 {
     "dependencies": {
-        "google-protobuf": "^3.20.1",
-        "grpc": "^1.24.11",
-        "grpc-tools": "^1.11.2"
+        "google-protobuf": "^3.21.2",
+        "@grpc/grpc-js": "^1.9.11",
+        "grpc-tools": "^1.12.4"
     }
 }
+```
+
+# yarn install
+```shell
+npm config set registry https://registry.npmmirror.com/ 
+sudo npm install -g yarn
+# 设置国内镜像
+yarn config set registry https://registry.npmmirror.com/
 ```
 
 # run nodejs
@@ -16,6 +24,8 @@
     % go run server.go
     2022/05/13 23:09:27 Starting http server and grpc server listening on 8081
 
+    执行如下命令调用nodejs grpc请求
+    % yarn install
     % node hello.js
     {
         wrappers_: null,

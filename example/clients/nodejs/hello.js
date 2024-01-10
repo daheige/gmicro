@@ -1,6 +1,6 @@
 let services = require('./pb/hello_grpc_pb.js');
 let messages = require('./pb/hello_pb.js');
-let grpc = require('grpc');
+let grpc = require('@grpc/grpc-js');
 
 let request = new messages.HelloReq();
 request.setName('heige');

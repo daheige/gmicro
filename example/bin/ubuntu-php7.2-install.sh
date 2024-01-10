@@ -2,7 +2,7 @@
 #ubuntu php7.2 install
 phpExec=`which php`
 if [ ! -z $phpExec ]; then
-    echo "you has install php"
+    echo "you has installed php"
     exit 0
 fi
 

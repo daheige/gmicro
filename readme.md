@@ -49,12 +49,17 @@ Note that the gmicro address has changed, and the v2 version is github.com/dahei
 
 # change log
 
+| options           | desc                                     | time       |
+|:------------------|:-----------------------------------------|:-----------|
+| go mod update     | update grpc version to v1.60.1           | 2024-01-10 |
+| grpc nodejs tools | update grpc nodejs client code generated | 2024-01-10 |
+| grpc mac tools    | add mac grpc install shell               | 2024-01-10 |
+
 | options          | desc                                  | time       |
 |:-----------------|:--------------------------------------|:-----------|
 | go mod update    | update grpc mod                       | 2023-06-04 |
 | grpc metadata    | fix request md for RequestInterceptor | 2023-06-04 |
 | add x-request-id | fix request x-request-id from md      | 2023-06-04 |
-
 
 | options         | desc                 | time       |
 |:----------------|:---------------------|:-----------|
@@ -77,27 +82,11 @@ Note that the gmicro address has changed, and the v2 version is github.com/dahei
 # grpc tools dockerfile
 https://github.com/daheige/gmicro-grpc-tools
 
-# grpc tools
+# install grpc tools
+```shell
+sh example/bin/grpc_tools.sh
+```
 
-    please do the following or see example/grpc_tools.sh
-    # go gRPC tools
-    go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest
-    go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@latest
-    go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-    
-    #go validator
-    go get github.com/go-playground/validator/v10
-    
-    #This will place four binaries in your $GOBIN;
-    #    protoc-gen-grpc-gateway
-    #    protoc-gen-openapiv2
-    #    protoc-gen-go
-    #    protoc-gen-go-grpc
-    
-    # protoc inject tag
-    go install github.com/favadi/protoc-go-inject-tag
-    
 # Google APIs
 
     # googleapis link:https://github.com/googleapis/googleapis
