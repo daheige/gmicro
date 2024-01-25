@@ -24,7 +24,7 @@ yarn config set registry https://registry.npmmirror.com/
     % go run server.go
     2022/05/13 23:09:27 Starting http server and grpc server listening on 8081
 
-    执行如下命令调用nodejs grpc请求
+    Second, start the client written in Node.js to make a gRPC request
     % yarn install
     % node hello.js
     {
