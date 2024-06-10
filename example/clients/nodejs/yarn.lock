@@ -2,23 +2,28 @@
 # yarn lockfile v1
 
 
-"@grpc/grpc-js@^1.9.11":
-  version "1.9.13"
-  resolved "https://registry.npmmirror.com/@grpc/grpc-js/-/grpc-js-1.9.13.tgz#ad9b7dbb6089c462469653c809996f13e46aa1cd"
-  integrity sha512-OEZZu9v9AA+7/tghMDE8o5DAMD5THVnwSqDWuh7PPYO5287rTyqy0xEHT6/e4pbqSrhyLPdQFsam4TwFQVVIIw==
+"@grpc/grpc-js@^1.10.9":
+  version "1.10.9"
+  resolved "https://registry.yarnpkg.com/@grpc/grpc-js/-/grpc-js-1.10.9.tgz#468cc1549a3fe37b760a16745fb7685d91f4f10c"
+  integrity sha512-5tcgUctCG0qoNyfChZifz2tJqbRbXVO9J7X6duFcOjY3HUNCxg5D0ZCK7EP9vIcZ0zRpLU9bWkyCqVCLZ46IbQ==
   dependencies:
-    "@grpc/proto-loader" "^0.7.8"
-    "@types/node" ">=12.12.47"
+    "@grpc/proto-loader" "^0.7.13"
+    "@js-sdsl/ordered-map" "^4.4.2"
 
-"@grpc/proto-loader@^0.7.8":
-  version "0.7.10"
-  resolved "https://registry.npmmirror.com/@grpc/proto-loader/-/proto-loader-0.7.10.tgz#6bf26742b1b54d0a473067743da5d3189d06d720"
-  integrity sha512-CAqDfoaQ8ykFd9zqBDn4k6iWT9loLAlc2ETmDFS9JCD70gDcnA4L3AFEo2iV7KyAtAAHFW9ftq1Fz+Vsgq80RQ==
+"@grpc/proto-loader@^0.7.13":
+  version "0.7.13"
+  resolved "https://registry.yarnpkg.com/@grpc/proto-loader/-/proto-loader-0.7.13.tgz#f6a44b2b7c9f7b609f5748c6eac2d420e37670cf"
+  integrity sha512-AiXO/bfe9bmxBjxxtYxFAXGZvMaN5s8kO+jBHAJCON8rJoB5YS/D6X7ZNc6XQkuHNmyl4CYaMI1fJ/Gn27RGGw==
   dependencies:
     lodash.camelcase "^4.3.0"
     long "^5.0.0"
-    protobufjs "^7.2.4"
+    protobufjs "^7.2.5"
     yargs "^17.7.2"
+
+"@js-sdsl/ordered-map@^4.4.2":
+  version "4.4.2"
+  resolved "https://registry.yarnpkg.com/@js-sdsl/ordered-map/-/ordered-map-4.4.2.tgz#9299f82874bab9e4c7f9c48d865becbfe8d6907c"
+  integrity sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==
 
 "@mapbox/node-pre-gyp@^1.0.5":
   version "1.0.11"
@@ -88,7 +93,7 @@
   resolved "https://registry.npmmirror.com/@protobufjs/utf8/-/utf8-1.1.0.tgz#a777360b5b39a1a2e5106f8e858f2fd2d060c570"
   integrity sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==
 
-"@types/node@>=12.12.47", "@types/node@>=13.7.0":
+"@types/node@>=13.7.0":
   version "20.10.8"
   resolved "https://registry.npmmirror.com/@types/node/-/node-20.10.8.tgz#f1e223cbde9e25696661d167a5b93a9b2a5d57c7"
   integrity sha512-f8nQs3cLxbAFc00vEU59yf9UyGUftkPaLGfvbVOIDdx2i1b8epBqj2aNGyP19fiyXWvlmZ7qC1XLjAzw/OKIeA==
@@ -402,10 +407,10 @@ path-is-absolute@^1.0.0:
   resolved "https://registry.npmmirror.com/path-is-absolute/-/path-is-absolute-1.0.1.tgz#174b9268735534ffbc7ace6bf53a5a9e1b5c5f5f"
   integrity sha512-AVbw3UJ2e9bq64vSaS9Am0fje1Pa8pbGqTTsmXfaIiMpnr5DlDhfJOuLj9Sf95ZPVDAUerDfEk88MPmPe7UCQg==
 
-protobufjs@^7.2.4:
-  version "7.2.5"
-  resolved "https://registry.npmmirror.com/protobufjs/-/protobufjs-7.2.5.tgz#45d5c57387a6d29a17aab6846dcc283f9b8e7f2d"
-  integrity sha512-gGXRSXvxQ7UiPgfw8gevrfRWcTlSbOFg+p/N+JVJEK5VhueL2miT6qTymqAmjr1Q5WbOCyJbyrk6JfWKwlFn6A==
+protobufjs@^7.2.5:
+  version "7.3.0"
+  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-7.3.0.tgz#a32ec0422c039798c41a0700306a6e305b9cb32c"
+  integrity sha512-YWD03n3shzV9ImZRX3ccbjqLxj7NokGN0V/ESiBV5xWqrommYHYiihuIyavq03pWSGqlyvYUFmfoMKd+1rPA/g==
   dependencies:
     "@protobufjs/aspromise" "^1.1.2"
     "@protobufjs/base64" "^1.1.2"
