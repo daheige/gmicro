@@ -11,6 +11,7 @@ brew install libtool
 brew install curl
 brew install make
 brew install g++
+brew install gcc
 brew install unzip
 brew install cmake
 brew install protobuf
