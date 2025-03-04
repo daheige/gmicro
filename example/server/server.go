@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
 
+	"google.golang.org/grpc"
+
 	"github.com/daheige/gmicro/v2"
 	"github.com/daheige/gmicro/v2/example/pb"
-	"google.golang.org/grpc"
 )
 
 var (
@@ -20,7 +20,7 @@ var (
 func init() {
 	sharePort = 8081
 	shutdownFunc = func() {
-		fmt.Println("Server shutting down")
+		log.Println("Server shutting down")
 	}
 }
 

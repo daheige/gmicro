@@ -61,7 +61,7 @@ type Service struct {
 	httpServerAddress    string          // http server host eg: ip:port
 	gRPCNetwork          string          // the gRPC network must be "tcp", "tcp4", "tcp6"
 	recovery             func()          // goroutine exec recover catch stack
-	shutdownFunc         func()          // shutdown func
+	shutdownFunc         func()          // exec shutdown func after service exit
 	shutdownTimeout      time.Duration   // shutdown wait time
 	preShutdownDelay     time.Duration
 	interruptSignals     []os.Signal // interrupt signal
@@ -113,10 +113,12 @@ func defaultService() *Service {
 	s := Service{}
 	s.httpHandler = DefaultHTTPHandler
 	s.errorHandler = gRuntime.DefaultHTTPErrorHandler
-	s.shutdownFunc = func() {}
 	s.shutdownTimeout = defaultShutdownTimeout
 	s.preShutdownDelay = defaultPreShutdownDelay
 	s.logger = dummyLogger
+	s.shutdownFunc = func() {
+		s.logger.Printf("exec shutdown func\n")
+	}
 
 	// goroutine recover catch stack
 	s.recovery = func() {
@@ -375,8 +377,6 @@ func (s *Service) startGRPCGateway() error {
 	// http server
 	s.HTTPServer.Addr = s.httpServerAddress
 	s.HTTPServer.Handler = s.httpHandler(s.mux)
-	s.HTTPServer.RegisterOnShutdown(s.shutdownFunc)
-
 	return s.HTTPServer.ListenAndServe()
 }
 
@@ -413,6 +413,7 @@ func (s *Service) Stop() {
 
 	// gracefully stop http server
 	s.httpServerShutdown()
+	s.shutdownFunc() // exec shutdown function
 }
 
 // httpServerShutdown http gateway server graceful shutdown.
@@ -515,8 +516,6 @@ func (s *Service) startGRPCAndHTTPServer() error {
 	s.HTTPServer.Addr = s.httpServerAddress
 	// gRPC server handler convert to http handler.
 	s.HTTPServer.Handler = GRPCHandlerFunc(s.GRPCServer, httpMux)
-	s.HTTPServer.RegisterOnShutdown(s.shutdownFunc)
-
 	return s.HTTPServer.ListenAndServe()
 }
 
@@ -530,8 +529,9 @@ func (s *Service) stopGRPCAndHTTPServer() {
 		time.Sleep(s.preShutdownDelay)
 	}
 
-	// graceful server shutdown
+	// gracefully stop http server
 	s.httpServerShutdown()
+	s.shutdownFunc() // exec shutdown function
 }
 
 // The following method is only used to start the grpc server, but not start http gw.
@@ -638,6 +638,8 @@ func (s *Service) StopGRPCWithoutGateway() {
 	case <-done:
 		s.logger.Printf("Grpc server shutdown success")
 	}
+
+	s.shutdownFunc() // exec shutdown function
 }
 
 // ServeFile serves a file
