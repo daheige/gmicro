@@ -2,7 +2,7 @@
   
     Golang grpc micro library.
     Microservice prototype with gRPC + http +h2c+ gRPC gateway + logger + prometheus.
-    Require Go version >= v1.13.
+    Require Go version >= v1.16.
     Reference project：https://github.com/dakalab/micro
 
 # supported features
