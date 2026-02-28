@@ -13,10 +13,11 @@ import (
 	"strings"
 	"time"
 
-	gRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-	gValidator "github.com/grpc-ecosystem/go-grpc-middleware/validator"
-	gPrometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	gPrometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
+	gRecovery "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
+	gValidator "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/validator"
 	gRuntime "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -80,6 +81,7 @@ type Service struct {
 	logger               Logger                // logger interface entry
 	handlerFromEndpoints []HandlerFromEndpoint // http gw endpoint
 	enablePrometheus     bool                  // enable prometheus monitor
+	serverMetricsOptions []gPrometheus.ServerMetricsOption
 }
 
 // DefaultHTTPHandler is the default http handler which does nothing.
@@ -174,8 +176,14 @@ func NewService(opts ...Option) *Service {
 
 	// install prometheus interceptor
 	if s.enablePrometheus {
-		s.streamInterceptors = append(s.streamInterceptors, gPrometheus.StreamServerInterceptor)
-		s.unaryInterceptors = append(s.unaryInterceptors, gPrometheus.UnaryServerInterceptor)
+		// NewServerMetrics returns a new ServerMetrics object that has server interceptor methods.
+		// NOTE: Remember to register ServerMetrics object by using prometheus registry
+		// e.g. prometheus.MustRegister(myServerMetrics).
+		serverMetrics := gPrometheus.NewServerMetrics(s.serverMetricsOptions...)
+		prometheus.MustRegister(serverMetrics)
+
+		s.streamInterceptors = append(s.streamInterceptors, serverMetrics.StreamServerInterceptor())
+		s.unaryInterceptors = append(s.unaryInterceptors, serverMetrics.UnaryServerInterceptor())
 
 		// add /metrics HTTP/1 endpoint
 		routeMetrics := Route{
@@ -559,8 +567,14 @@ func NewServiceWithoutGateway(opts ...Option) *Service {
 
 	// install prometheus interceptor
 	if s.enablePrometheus {
-		s.streamInterceptors = append(s.streamInterceptors, gPrometheus.StreamServerInterceptor)
-		s.unaryInterceptors = append(s.unaryInterceptors, gPrometheus.UnaryServerInterceptor)
+		// NewServerMetrics returns a new ServerMetrics object that has server interceptor methods.
+		// NOTE: Remember to register ServerMetrics object by using prometheus registry
+		// e.g. prometheus.MustRegister(myServerMetrics).
+		serverMetrics := gPrometheus.NewServerMetrics(s.serverMetricsOptions...)
+		prometheus.MustRegister(serverMetrics)
+
+		s.streamInterceptors = append(s.streamInterceptors, serverMetrics.StreamServerInterceptor())
+		s.unaryInterceptors = append(s.unaryInterceptors, serverMetrics.UnaryServerInterceptor())
 	}
 
 	s.muxOptions = nil

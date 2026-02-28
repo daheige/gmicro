@@ -43,4 +43,4 @@ var GreeterServiceService = exports.GreeterServiceService = {
   },
 };
 
-exports.GreeterServiceClient = grpc.makeGenericClientConstructor(GreeterServiceService);
+exports.GreeterServiceClient = grpc.makeGenericClientConstructor(GreeterServiceService, 'GreeterService');
