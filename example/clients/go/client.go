@@ -4,12 +4,14 @@ import (
 	"context"
 	"log"
 	"os"
+	"time"
 
-	"github.com/daheige/gmicro/v2"
-	"github.com/daheige/gmicro/v2/example/clients/go/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
+
+	"github.com/daheige/gmicro/v2"
+	"github.com/daheige/gmicro/v2/example/clients/go/pb"
 )
 
 var (
@@ -21,9 +23,8 @@ var (
 
 /**
 % go run client.go daheige
-2020/06/27 23:28:42 name:hello,daheige,message:call ok
-heige@daheige client % go run client.go daheige123
-2020/06/27 23:28:51 name:hello,daheige123,message:call ok
+2026/02/28 11:12:08 x-request-id:  b790f23fc93743f8aafe1e09c8335e27
+2026/02/28 11:12:08 name:hello,daheige,message:call ok
 */
 
 func main() {
@@ -33,7 +34,12 @@ func main() {
 	// instead. Will be supported throughout 1.x.
 	// conn, err := grpc.Dial(address, grpc.WithInsecure())
 	// so use grpc.WithTransportCredentials(insecure.NewCredentials()) as default grpc.DialOption
-	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithIdleTimeout(30*time.Minute), // 连接生命周期
+		grpc.WithMaxCallAttempts(3),          // 最大重试次数
+	)
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
